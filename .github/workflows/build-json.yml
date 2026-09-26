@@ -1,0 +1,68 @@
+name: Build Articles JSON
+
+on:
+  push:
+    branches: [ main ]
+    paths: ['dispatches/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install gray-matter marked
+
+      - name: Generate articles.json
+        run: |
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+          const matter = require("gray-matter");
+          const { marked } = require("marked");
+
+          const dir = path.join(process.cwd(), "dispatches");
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+          const files = fs.readdirSync(dir).filter(f => f.endsWith(".md") || f.endsWith(".markdown"));
+          const articles = [];
+
+          files.forEach(file => {
+            const filePath = path.join(dir, file);
+            const fileContent = fs.readFileSync(filePath, "utf8");
+            const parsed = matter(fileContent);
+            
+            const id = parsed.data.id || path.basename(file, path.extname(file));
+            const title = parsed.data.title || "Untitled";
+            const category = parsed.data.category || "salisminster";
+            const htmlContent = marked.parse(parsed.content);
+
+            articles.push({
+              id: id,
+              title: title,
+              category: category,
+              content: htmlContent
+            });
+          });
+
+          fs.writeFileSync("articles.json", JSON.stringify(articles, null, 2));
+          console.log("Successfully generated articles.json with " + articles.length + " dispatches.");
+          '
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add articles.json
+          git diff --staged --quiet || (git commit -m "Auto-compile articles.json from Pages CMS dispatches" && git push)
