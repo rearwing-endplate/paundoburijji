@@ -16,6 +16,10 @@ content:
         type: select
         options:
           values: [salisminster, burj]
+      - name: image
+        label: Cover Image
+        type: image
+        required: false
       - name: date
         label: Publication Date
         type: date
