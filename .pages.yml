@@ -1,20 +1,30 @@
-backend:
-  name: github
-  repo: rearwing-endplate/paundoburijji
-  branch: main
+media:
+  input: assets
+  output: /assets
 
-media_folder: assets
-public_folder: /assets
-
-collections:
+content:
   - name: dispatches
     label: Research Dispatches
-    folder: dispatches
-    create: true
-    format: frontmatter
-    extension: md
+    type: collection
+    path: dispatches
     fields:
-      - { label: Title, name: title, widget: string }
-      - { label: Category, name: category, widget: select, options: ["salisminster", "burj"] }
-      - { label: Publication Date, name: date, widget: datetime }
-      - { label: Body Content, name: body, widget: markdown }
+      - name: title
+        label: Title
+        type: string
+      - name: category
+        label: Category
+        type: select
+        options:
+          values: [salisminster, burj]
+      - name: image
+        label: Cover Image
+        type: image
+        required: false
+      - name: date
+        label: Publication Date
+        type: date
+        options:
+          time: true
+      - name: body
+        label: Body Content
+        type: rich-text
