@@ -105,6 +105,9 @@
       articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
+    // ADD THIS EXACT LINE TO SORT NEWEST FIRST:
+    articles.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
     const container = document.getElementById('fullArchiveContainer');
     const paginationFooter = document.getElementById('paginationFooter');
     if(!container) return;

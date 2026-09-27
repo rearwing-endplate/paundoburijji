@@ -666,6 +666,10 @@
         }
       ];
     }
+
+    // ADD THIS EXACT LINE TO SORT NEWEST FIRST:
+    articles.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
     renderPublicArticles();
   }
 
