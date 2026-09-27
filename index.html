@@ -639,7 +639,7 @@
   let rightStackOffset = 0;
   let activeFilter = 'all';
   let lastScrollDirection = 'down';
-  const MAX_STACK_ITEMS = 5; // 1 anchored LATEST card + 4 historical stack items
+  const MAX_STACK_ITEMS = 12; // 1 anchored main window + up to 11 reel windows
 
   async function initializeData() {
     try {
@@ -685,24 +685,154 @@
 
   window.addEventListener('DOMContentLoaded', initializeData);
 
+  function getReelMetrics() {
+    const track = document.getElementById('stackCardsInner');
+    const firstCard = track?.querySelector('.reel-card');
+    if (!track || !firstCard) return { pitch: 209, cardHeight: 185, gap: 24 };
+
+    const cardHeight = firstCard.getBoundingClientRect().height || 185;
+    const styles = getComputedStyle(track);
+    const gap = parseFloat(styles.rowGap || styles.gap || '24') || 24;
+    return { cardHeight, gap, pitch: cardHeight + gap };
+  }
+
+  function updateReelRail(stackCount, offset, visibleCount = 2) {
+    const thumb = document.querySelector('.reel-rail-thumb');
+    if (!thumb) return;
+    const maxOffset = Math.max(0, stackCount - visibleCount);
+    const markerHeightPct = maxOffset === 0
+      ? 100
+      : Math.max(28, Math.min(100, (visibleCount / stackCount) * 100));
+    const markerTopPct = maxOffset === 0
+      ? 0
+      : (offset / maxOffset) * (100 - markerHeightPct);
+    thumb.style.height = `${markerHeightPct}%`;
+    thumb.style.top = `${markerTopPct}%`;
+  }
+
+  function animateIncitesReel(previousOffset, nextOffset, direction) {
+    const track = document.getElementById('stackCardsInner');
+    if (!track || previousOffset === nextOffset) return;
+
+    const { pitch } = getReelMetrics();
+    const fromY = -(previousOffset * pitch);
+    const toY = -(nextOffset * pitch);
+
+    // Cancel any previous reel motion cleanly.
+    if (track.__reelAnimation) {
+      try { track.__reelAnimation.cancel(); } catch (_) {}
+      track.__reelAnimation = null;
+    }
+
+    track.classList.add('is-spinning');
+    track.style.transform = `translate3d(0, ${fromY}px, 0)`;
+    track.style.filter = 'blur(0.6px) saturate(0.94)';
+
+    // Force the starting state to be committed before the reel moves.
+    void track.offsetWidth;
+
+    const travel = toY - fromY;
+    const travelDir = travel < 0 ? -1 : 1;
+    const overshoot = 9 * travelDir;
+    const rebound = 2.5 * travelDir;
+
+    if (typeof track.animate === 'function') {
+      const animation = track.animate([
+        {
+          transform: `translate3d(0, ${fromY}px, 0)`,
+          filter: 'blur(0.5px) saturate(0.94)'
+        },
+        {
+          transform: `translate3d(0, ${fromY + travel * 0.42}px, 0)`,
+          filter: 'blur(5.5px) saturate(0.60)',
+          offset: 0.34
+        },
+        {
+          transform: `translate3d(0, ${toY + overshoot}px, 0)`,
+          filter: 'blur(3px) saturate(0.72)',
+          offset: 0.82
+        },
+        {
+          transform: `translate3d(0, ${toY - rebound}px, 0)`,
+          filter: 'blur(0.8px) saturate(0.92)',
+          offset: 0.94
+        },
+        {
+          transform: `translate3d(0, ${toY}px, 0)`,
+          filter: 'blur(0) saturate(1)'
+        }
+      ], {
+        duration: 1180,
+        easing: 'cubic-bezier(0.08, 0.72, 0.12, 1)',
+        fill: 'forwards'
+      });
+
+      track.__reelAnimation = animation;
+      animation.finished.then(() => {
+        track.style.transform = `translate3d(0, ${toY}px, 0)`;
+        track.style.filter = '';
+        track.classList.remove('is-spinning');
+        track.__reelAnimation = null;
+
+        // The card that entered the viewing area is the "winning" card.
+        const winnerIndex = direction > 0
+          ? nextOffset + 1
+          : nextOffset;
+        const winner = track.querySelector(`[data-reel-index="${winnerIndex}"]`);
+        if (winner) {
+          winner.classList.remove('reel-win');
+          void winner.offsetWidth;
+          winner.classList.add('reel-win');
+        }
+      }).catch(() => {
+        track.style.transform = `translate3d(0, ${toY}px, 0)`;
+        track.style.filter = '';
+        track.classList.remove('is-spinning');
+        track.__reelAnimation = null;
+      });
+      return;
+    }
+
+    // CSS-transition fallback for browsers without the Web Animations API.
+    track.style.transition = 'transform 1.18s cubic-bezier(0.08, 0.72, 0.12, 1), filter 1.18s ease';
+    requestAnimationFrame(() => {
+      track.style.transform = `translate3d(0, ${toY}px, 0)`;
+      track.style.filter = 'blur(0) saturate(1)';
+    });
+    window.setTimeout(() => {
+      track.classList.remove('is-spinning');
+      track.style.transition = '';
+      const winnerIndex = direction > 0 ? nextOffset + 1 : nextOffset;
+      const winner = track.querySelector(`[data-reel-index="${winnerIndex}"]`);
+      if (winner) {
+        winner.classList.remove('reel-win');
+        void winner.offsetWidth;
+        winner.classList.add('reel-win');
+      }
+    }, 1220);
+  }
+
   function scrollIncitesStack(direction) {
     const matched = articles.filter(a => activeFilter === 'all' || a.category === activeFilter);
     const stackItems = matched.slice(1, MAX_STACK_ITEMS);
-    const visibleCount = Math.min(3, stackItems.length);
+    const visibleCount = 2;
     const maxOffset = Math.max(0, stackItems.length - visibleCount);
     const previousOffset = rightStackOffset;
 
     lastScrollDirection = direction > 0 ? 'down' : 'up';
-    rightStackOffset += direction;
-    if (rightStackOffset < 0) rightStackOffset = 0;
-    if (rightStackOffset > maxOffset) rightStackOffset = maxOffset;
+    rightStackOffset = Math.max(0, Math.min(maxOffset, rightStackOffset + direction));
     if (rightStackOffset === previousOffset) return;
 
-    window.__reelTransitionFromOffset = previousOffset;
-    renderPublicArticles(activeFilter, true);
+    const upBtn = document.getElementById('stackScrollUpBtn');
+    const downBtn = document.getElementById('stackScrollDownBtn');
+    if (upBtn) upBtn.disabled = rightStackOffset <= 0;
+    if (downBtn) downBtn.disabled = rightStackOffset >= maxOffset;
+
+    updateReelRail(stackItems.length, rightStackOffset, visibleCount);
+    animateIncitesReel(previousOffset, rightStackOffset, direction);
   }
 
-  function renderPublicArticles(filter = 'all', animate = false) {
+  function renderPublicArticles(filter = 'all') {
     activeFilter = filter;
     const container = document.getElementById('publicArticlesContainer');
     const viewAllWrap = document.getElementById('viewAllIncitesBtnWrap');
@@ -769,22 +899,16 @@
       const artFeatured = matched[0];
       const isSalisFeatured = artFeatured.category === 'salisminster';
       const stackItems = matched.slice(1, MAX_STACK_ITEMS);
-      const visibleCount = Math.min(3, stackItems.length);
+      const visibleCount = 2;
       const maxOffset = Math.max(0, stackItems.length - visibleCount);
       rightStackOffset = Math.max(0, Math.min(rightStackOffset, maxOffset));
-
       const upDisabled = rightStackOffset <= 0;
       const downDisabled = rightStackOffset >= maxOffset;
-      const cardPitch = 209; // 185px card + 24px reel gap
-      const translateY = -(rightStackOffset * cardPitch);
-      const markerHeightPct = Math.max(24, Math.min(100, (visibleCount / stackItems.length) * 100));
-      const markerTopPct = maxOffset > 0 ? (rightStackOffset / maxOffset) * (100 - markerHeightPct) : 0;
 
       const stackCards = stackItems.map((art, idx) => {
         const isSalis = art.category === 'salisminster';
-        const isSettled = idx >= rightStackOffset && idx < rightStackOffset + visibleCount;
         return `
-          <article class="incite-card secondary reel-card ${isSettled ? 'is-visible-slot' : ''}" data-reel-index="${idx}" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
+          <article class="incite-card secondary reel-card" data-reel-index="${idx}" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
             <div>
               <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art.title}</h3>
               <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
@@ -797,8 +921,8 @@
 
       html = `
         <div class="swiss-incites-grid reel-layout" data-stack-count="${stackItems.length}">
-          <!-- Left Featured Card: fixed / anchored -->
-          <article class="incite-card featured" style="${getBgStyle(artFeatured)}" onclick="handleInciteInteraction('${artFeatured.id}')" ontouchend="handleMobileTap(event, '${artFeatured.id}')">
+          <!-- 1: fixed main window -->
+          <article class="incite-card featured main-incite-window" style="${getBgStyle(artFeatured)}" onclick="handleInciteInteraction('${artFeatured.id}')" ontouchend="handleMobileTap(event, '${artFeatured.id}')">
             <div>
               <h3>${artFeatured.title}</h3>
               <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
@@ -807,15 +931,15 @@
             </div>
           </article>
 
-          <!-- Mechanical index rail: physically between the anchored window and reel -->
+          <!-- white mechanical position bar: explicitly between the two window systems -->
           <div class="reel-gutter" aria-hidden="true">
             <div class="reel-rail">
               <div class="reel-rail-track"></div>
-              <div class="reel-rail-thumb" style="height:${markerHeightPct}%; top:${markerTopPct}%;"></div>
+              <div class="reel-rail-thumb"></div>
             </div>
           </div>
 
-          <!-- Right slot-machine reel -->
+          <!-- 2: the only moving windows -->
           <div class="reel-column">
             <div class="slot-controls">
               <button id="stackScrollUpBtn" class="slot-control" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" ${upDisabled ? 'disabled' : ''}>
@@ -823,8 +947,8 @@
               </button>
             </div>
 
-            <div class="slot-window" data-visible-count="${visibleCount}" style="--visible-count:${visibleCount};">
-              <div id="stackCardsInner" class="slot-track" style="transform: translate3d(0, ${translateY}px, 0);">
+            <div class="slot-window" data-visible-count="2" style="--visible-count:2;">
+              <div id="stackCardsInner" class="slot-track">
                 ${stackCards}
               </div>
               <div class="slot-window-line slot-window-line-top"></div>
@@ -841,52 +965,12 @@
       `;
 
       container.innerHTML = html;
-      if (animate) {
-        const track = document.getElementById('stackCardsInner');
-        const cardPitch = 209;
-        const fromOffset = Number.isFinite(window.__reelTransitionFromOffset)
-          ? window.__reelTransitionFromOffset
-          : rightStackOffset;
-        const fromY = -(fromOffset * cardPitch);
-        const toY = translateY;
-
-        if (track && fromY !== toY) {
-          track.style.transition = 'none';
-          track.style.transform = `translate3d(0, ${fromY}px, 0)`;
-          track.classList.add('is-spinning');
-          void track.offsetWidth;
-
-          const travel = toY - fromY;
-          const directionSign = travel < 0 ? -1 : 1;
-          const overshoot = 11 * directionSign;
-          const rebound = 3 * directionSign;
-
-          const reelMotion = track.animate([
-            { transform: `translate3d(0, ${fromY}px, 0)`, filter: 'blur(0.5px) saturate(0.92)' },
-            { transform: `translate3d(0, ${fromY + (travel * 0.56)}px, 0)`, filter: 'blur(4.8px) saturate(0.64)', offset: 0.46 },
-            { transform: `translate3d(0, ${toY + overshoot}px, 0)`, filter: 'blur(2.2px) saturate(0.78)', offset: 0.84 },
-            { transform: `translate3d(0, ${toY - rebound}px, 0)`, filter: 'blur(0.65px) saturate(0.94)', offset: 0.94 },
-            { transform: `translate3d(0, ${toY}px, 0)`, filter: 'blur(0) saturate(1)' }
-          ], { duration: 1180, easing: 'cubic-bezier(0.08, 0.72, 0.12, 1)', fill: 'forwards' });
-
-          reelMotion.finished.then(() => {
-            track.classList.remove('is-spinning');
-            track.style.transform = `translate3d(0, ${toY}px, 0)`;
-            track.style.filter = '';
-            const landedIndex = lastScrollDirection === 'down'
-              ? rightStackOffset + visibleCount - 1
-              : rightStackOffset;
-            const winner = track.querySelector(`[data-reel-index="${landedIndex}"]`);
-            if (winner) {
-              winner.classList.remove('reel-win');
-              void winner.offsetWidth;
-              winner.classList.add('reel-win');
-            }
-          }).catch(() => {});
-        }
-
-        window.__reelTransitionFromOffset = undefined;
+      const track = document.getElementById('stackCardsInner');
+      if (track) {
+        const { pitch } = getReelMetrics();
+        track.style.transform = `translate3d(0, ${-(rightStackOffset * pitch)}px, 0)`;
       }
+      updateReelRail(stackItems.length, rightStackOffset, visibleCount);
       return;
     }
 

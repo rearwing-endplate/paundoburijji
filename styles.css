@@ -886,3 +886,64 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
     flex-basis: var(--slot-card-h);
   }
 }
+
+/* ---------- SECTION 05: 1 + 2 REEL GEOMETRY / MECHANICAL LANDING ---------- */
+.swiss-incites-grid.reel-layout {
+  grid-template-columns: minmax(0, 1.85fr) 30px minmax(0, 1fr);
+  column-gap: 0;
+  align-items: center;
+}
+
+.main-incite-window {
+  align-self: center;
+  height: 394px; /* 2 x 185px windows + 24px mechanical gap */
+  min-height: 394px;
+}
+
+.reel-gutter {
+  align-self: center;
+  height: 394px;
+  min-height: 394px;
+}
+
+.reel-column {
+  align-self: center;
+}
+
+.slot-window {
+  --slot-card-h: 185px;
+  --slot-gap: 24px;
+  height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
+  min-height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
+}
+
+.slot-track .reel-card:hover {
+  transform: none;
+}
+
+.slot-track.is-spinning .reel-card:hover {
+  transform: none;
+}
+
+@media (max-width: 1024px) {
+  .main-incite-window,
+  .reel-gutter {
+    height: 394px;
+    min-height: 394px;
+  }
+}
+
+@media (max-width: 700px) {
+  .main-incite-window,
+  .reel-gutter {
+    height: 358px;
+    min-height: 358px;
+  }
+
+  .slot-window {
+    --slot-card-h: 170px;
+    --slot-gap: 18px;
+    height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
+    min-height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
+  }
+}
