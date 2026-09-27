@@ -32,20 +32,20 @@
     <meta property="twitter:image:height" content="630">
 
     <style>
-      @keyframes slotReelStopUp {
-        0% { opacity: 0.15; transform: translateY(-32px); filter: blur(6px); }
-        60% { opacity: 0.8; transform: translateY(6px); filter: blur(2px); }
-        85% { opacity: 0.95; transform: translateY(-3px); filter: blur(0.5px); }
-        100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+      @keyframes slotWheelSpinUp {
+        0% { transform: translateY(35px); filter: blur(8px); opacity: 0.2; }
+        60% { transform: translateY(-8px); filter: blur(2px); opacity: 0.8; }
+        85% { transform: translateY(4px); filter: blur(0.5px); opacity: 0.95; }
+        100% { transform: translateY(0); filter: blur(0px); opacity: 1; }
       }
-      @keyframes slotReelStopDown {
-        0% { opacity: 0.15; transform: translateY(32px); filter: blur(6px); }
-        60% { opacity: 0.8; transform: translateY(-6px); filter: blur(2px); }
-        85% { opacity: 0.95; transform: translateY(3px); filter: blur(0.5px); }
-        100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+      @keyframes slotWheelSpinDown {
+        0% { transform: translateY(-35px); filter: blur(8px); opacity: 0.2; }
+        60% { transform: translateY(8px); filter: blur(2px); opacity: 0.8; }
+        85% { transform: translateY(-4px); filter: blur(0.5px); opacity: 0.95; }
+        100% { transform: translateY(0); filter: blur(0px); opacity: 1; }
       }
-      .stack-anim-up { animation: slotReelStopUp 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-      .stack-anim-down { animation: slotReelStopDown 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+      .stack-anim-up { animation: slotWheelSpinUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+      .stack-anim-down { animation: slotWheelSpinDown 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     </style>
 </head>
 <body>
@@ -786,11 +786,9 @@
         </div>
       `;
     } else {
-      // Left Featured Card is permanently anchored to the absolute latest article (matched[0])
       const artFeatured = matched[0];
       const isSalisFeatured = artFeatured.category === 'salisminster';
 
-      // Right stack scrolls through the remaining historical records based on rightStackOffset
       const artStack1 = matched[rightStackOffset + 1];
       const isSalis1 = artStack1.category === 'salisminster';
       const artStack2 = matched[rightStackOffset + 2];
@@ -802,7 +800,7 @@
       let markerTopPct = 0;
 
       if (totalScrollable > 0) {
-        markerHeightPct = Math.max(30, Math.min(100, (2 / totalScrollable) * 100));
+        markerHeightPct = Math.max(25, Math.min(100, (2 / totalScrollable) * 100));
         if (maxOffset > 0) {
           markerTopPct = (rightStackOffset / maxOffset) * (100 - markerHeightPct);
         }
@@ -820,36 +818,39 @@
             </div>
           </article>
 
-          <!-- Clean White Stack Scroll Marker Bar (Floating in gutter) -->
-          <div style="position: absolute; left: calc(50% - 12px); top: 30px; bottom: 30px; width: 2px; background: rgba(255,255,255,0.08); border-radius: 2px; pointer-events: none;">
-            <div style="position: absolute; left: 0; width: 100%; background: #ffffff; border-radius: 2px; height: ${markerHeightPct}%; top: ${markerTopPct}%; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 8px rgba(255,255,255,0.3);"></div>
+          <!-- Explicit White Stack Scroll Marker Bar in Gutter -->
+          <div style="position: absolute; left: calc(50% - 10px); top: 40px; bottom: 40px; width: 3px; background: rgba(255,255,255,0.1); border-radius: 3px; pointer-events: none; z-index: 5;">
+            <div style="position: absolute; left: 0; width: 100%; background: #ffffff; border-radius: 3px; height: ${markerHeightPct}%; top: ${markerTopPct}%; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 10px rgba(255,255,255,0.5);"></div>
           </div>
 
-          <!-- Right Column: Scrolling Slot-Reel Stack -->
+          <!-- Right Column: Scrolling Slot-Reel Stack with Viewport Clipping -->
           <div style="display: flex; flex-direction: column; position: relative;">
             <!-- Aligned Upward Arrow -->
             <div style="text-align: center; margin-bottom: 12px;">
               <button id="stackScrollUpBtn" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" style="background: rgba(10,10,14,0.85); border: 1px solid ${upDisabled ? 'var(--line)' : 'var(--gold)'}; color: ${upDisabled ? 'var(--stone)' : 'var(--gold)'}; width: 100%; max-width: 120px; height: 28px; border-radius: 4px; cursor: ${upDisabled ? 'not-allowed' : 'pointer'}; font-family: var(--mono); font-size: 13px; transition: all 0.2s ease; opacity: ${upDisabled ? '0.2' : '1'}; pointer-events: ${upDisabled ? 'none' : 'auto'};">&uarr; NEWER</button>
             </div>
 
-            <!-- Stacked Secondary Cards Wrapper with Weighted Slot-Reel Animation -->
-            <div id="stackCardsInner" class="${animate ? (lastScrollDirection === 'up' ? 'stack-anim-down' : 'stack-anim-up') : ''}" style="display: flex; flex-direction: column; gap: 24px;">
-              <article class="incite-card secondary" style="${getBgStyle(artStack1)}" onclick="handleInciteInteraction('${artStack1.id}')" ontouchend="handleMobileTap(event, '${artStack1.id}')">
-                <div>
-                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack1.title}</h3>
-                  <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                    <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+            <!-- Clipped Viewport Wrapper to simulate mechanical wheel rotation -->
+            <div style="overflow: hidden; padding: 4px 0;">
+              <!-- Stacked Secondary Cards Wrapper with Slot-Reel Spin Animation -->
+              <div id="stackCardsInner" class="${animate ? (lastScrollDirection === 'up' ? 'stack-anim-down' : 'stack-anim-up') : ''}" style="display: flex; flex-direction: column; gap: 24px;">
+                <article class="incite-card secondary" style="${getBgStyle(artStack1)}" onclick="handleInciteInteraction('${artStack1.id}')" ontouchend="handleMobileTap(event, '${artStack1.id}')">
+                  <div>
+                    <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack1.title}</h3>
+                    <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+                      <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+                    </div>
                   </div>
-                </div>
-              </article>
-              <article class="incite-card secondary" style="${getBgStyle(artStack2)}" onclick="handleInciteInteraction('${artStack2.id}')" ontouchend="handleMobileTap(event, '${artStack2.id}')">
-                <div>
-                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack2.title}</h3>
-                  <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                    <span class="article-tag ${isSalis2 ? 'salisminster' : 'burj'}">${isSalis2 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+                </article>
+                <article class="incite-card secondary" style="${getBgStyle(artStack2)}" onclick="handleInciteInteraction('${artStack2.id}')" ontouchend="handleMobileTap(event, '${artStack2.id}')">
+                  <div>
+                    <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack2.title}</h3>
+                    <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+                      <span class="article-tag ${isSalis2 ? 'salisminster' : 'burj'}">${isSalis2 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+              </div>
             </div>
 
             <!-- Aligned Downward Arrow -->
