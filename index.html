@@ -32,16 +32,20 @@
     <meta property="twitter:image:height" content="630">
 
     <style>
-      @keyframes luxeMotionBlurUp {
-        0% { opacity: 0.15; transform: translateY(22px); filter: blur(5px); }
+      @keyframes slotReelStopUp {
+        0% { opacity: 0.15; transform: translateY(-32px); filter: blur(6px); }
+        60% { opacity: 0.8; transform: translateY(6px); filter: blur(2px); }
+        85% { opacity: 0.95; transform: translateY(-3px); filter: blur(0.5px); }
         100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
       }
-      @keyframes luxeMotionBlurDown {
-        0% { opacity: 0.15; transform: translateY(-22px); filter: blur(5px); }
+      @keyframes slotReelStopDown {
+        0% { opacity: 0.15; transform: translateY(32px); filter: blur(6px); }
+        60% { opacity: 0.8; transform: translateY(-6px); filter: blur(2px); }
+        85% { opacity: 0.95; transform: translateY(3px); filter: blur(0.5px); }
         100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
       }
-      .stack-anim-up { animation: luxeMotionBlurUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      .stack-anim-down { animation: luxeMotionBlurDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .stack-anim-up { animation: slotReelStopUp 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+      .stack-anim-down { animation: slotReelStopDown 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     </style>
 </head>
 <body>
@@ -651,7 +655,7 @@
   let rightStackOffset = 0;
   let activeFilter = 'all';
   let lastScrollDirection = 'down';
-  const MAX_STACK_ITEMS = 5;
+  const MAX_STACK_ITEMS = 5; // 1 anchored LATEST card + 4 historical stack items
 
   async function initializeData() {
     try {
@@ -699,7 +703,8 @@
 
   function scrollIncitesStack(direction) {
     const matched = articles.filter(a => activeFilter === 'all' || a.category === activeFilter);
-    const maxOffset = Math.max(0, Math.min(matched.length - 3, MAX_STACK_ITEMS - 3));
+    const maxAvailable = Math.min(matched.length, MAX_STACK_ITEMS);
+    const maxOffset = Math.max(0, maxAvailable - 3);
     
     lastScrollDirection = direction > 0 ? 'down' : 'up';
     rightStackOffset += direction;
@@ -781,18 +786,28 @@
         </div>
       `;
     } else {
-      // Left Featured Card is permanently anchored to the absolute latest article (matched[0])
       const artFeatured = matched[0];
       const isSalisFeatured = artFeatured.category === 'salisminster';
 
-      // Right stack scrolls through the remaining articles based on rightStackOffset
       const artStack1 = matched[rightStackOffset + 1];
       const isSalis1 = artStack1.category === 'salisminster';
       const artStack2 = matched[rightStackOffset + 2];
       const isSalis2 = artStack2.category === 'salisminster';
 
+      // Dynamic calculation for the Steel Blue Scroll Marker Bar height and position
+      const totalScrollable = Math.max(0, maxAvailableStack - 2); 
+      let markerHeightPct = 100;
+      let markerTopPct = 0;
+
+      if (totalScrollable > 0) {
+        markerHeightPct = Math.max(30, Math.min(100, (2 / totalScrollable) * 100));
+        if (maxOffset > 0) {
+          markerTopPct = (rightStackOffset / maxOffset) * (100 - markerHeightPct);
+        }
+      }
+
       html = `
-        <div class="swiss-incites-grid">
+        <div class="swiss-incites-grid" style="position: relative;">
           <!-- Left Featured Card (Anchored to Latest) -->
           <article class="incite-card featured" style="${getBgStyle(artFeatured)}" onclick="handleInciteInteraction('${artFeatured.id}')" ontouchend="handleMobileTap(event, '${artFeatured.id}')">
             <div>
@@ -803,14 +818,19 @@
             </div>
           </article>
 
-          <!-- Right Column: Scrolling Stack with Perceptible Motion-Blur Elevator Animation -->
+          <!-- Steel Blue Stack Scroll Marker Bar (Floating between columns) -->
+          <div style="position: absolute; left: calc(50% - 12px); top: 40px; bottom: 40px; width: 4px; background: rgba(124,143,156,0.12); border-radius: 2px; pointer-events: none; display: none; @media(min-width: 900px){display: block;}">
+            <div style="position: absolute; left: 0; width: 100%; background: var(--steel); border-radius: 2px; height: ${markerHeightPct}%; top: ${markerTopPct}%; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+          </div>
+
+          <!-- Right Column: Scrolling Slot-Reel Stack -->
           <div style="display: flex; flex-direction: column; position: relative;">
             <!-- Aligned Upward Arrow -->
             <div style="text-align: center; margin-bottom: 12px;">
               <button id="stackScrollUpBtn" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" style="background: rgba(10,10,14,0.85); border: 1px solid ${upDisabled ? 'var(--line)' : 'var(--gold)'}; color: ${upDisabled ? 'var(--stone)' : 'var(--gold)'}; width: 100%; max-width: 120px; height: 28px; border-radius: 4px; cursor: ${upDisabled ? 'not-allowed' : 'pointer'}; font-family: var(--mono); font-size: 13px; transition: all 0.2s ease; opacity: ${upDisabled ? '0.2' : '1'}; pointer-events: ${upDisabled ? 'none' : 'auto'};">&uarr; NEWER</button>
             </div>
 
-            <!-- Stacked Secondary Cards Wrapper with Motion Blur Animation -->
+            <!-- Stacked Secondary Cards Wrapper with Weighted Slot-Reel Animation -->
             <div id="stackCardsInner" class="${animate ? (lastScrollDirection === 'up' ? 'stack-anim-down' : 'stack-anim-up') : ''}" style="display: flex; flex-direction: column; gap: 24px;">
               <article class="incite-card secondary" style="${getBgStyle(artStack1)}" onclick="handleInciteInteraction('${artStack1.id}')" ontouchend="handleMobileTap(event, '${artStack1.id}')">
                 <div>
