@@ -157,18 +157,21 @@
   });
 
   async function loadArchiveArticles() {
-    let articles = [];
+    let rawArticles = [];
     try {
       const response = await fetch('articles.json');
       if (response.ok) {
-        articles = await response.json();
+        rawArticles = await response.json();
       }
     } catch (e) {
-      articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
+      rawArticles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
-    if (articles.length === 0) {
-      articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
+    if (rawArticles.length === 0) {
+      rawArticles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
+
+    // Attach original array index (_originalIndex) for CMS append order fallback
+    const articles = rawArticles.map((art, idx) => ({ ...art, _originalIndex: idx }));
 
     // Bulletproof chronological sort matching index.html
     articles.sort((a, b) => {
@@ -184,7 +187,7 @@
       if (timeA !== timeB) {
         return timeB - timeA; // Descending order (newest first)
       }
-      return String(b.id || '').localeCompare(String(a.id || ''));
+      return b._originalIndex - a._originalIndex;
     });
 
     const container = document.getElementById('fullArchiveContainer');

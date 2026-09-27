@@ -642,20 +642,24 @@
   const MAX_STACK_ITEMS = 12;
 
   async function initializeData() {
+    let rawArticles = [];
     try {
       const response = await fetch('articles.json');
       if (response.ok) {
-        articles = await response.json();
+        rawArticles = await response.json();
       }
     } catch (e) {
       console.log('No static articles.json found. Defaulting to local storage.');
     }
 
-    if (articles.length === 0) {
-      articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
+    if (rawArticles.length === 0) {
+      rawArticles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
-    // Bulletproof chronological sorting that handles CMS dates, numeric timestamps, and fallback strings
+    // Attach original array index (_originalIndex) so CMS append order is preserved as a reliable fallback
+    articles = rawArticles.map((art, idx) => ({ ...art, _originalIndex: idx }));
+
+    // Bulletproof chronological sort: newest date first, falling back to reverse-append order (_originalIndex descending)
     articles.sort((a, b) => {
       const parseTime = (val) => {
         if (!val) return 0;
@@ -667,11 +671,11 @@
       const timeB = parseTime(b.date);
       
       if (timeA !== timeB) {
-        return timeB - timeA; // Newest first
+        return timeB - timeA; // Newest date first
       }
       
-      // Fallback: compare ID strings or numeric suffixes if dates match or are absent
-      return String(b.id || '').localeCompare(String(a.id || ''));
+      // Fallback: Pages CMS appends new items at the end, so higher original index = newer item
+      return b._originalIndex - a._originalIndex;
     });
 
     renderPublicArticles();
