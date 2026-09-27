@@ -8,43 +8,11 @@
     "content": "<p>Final test.</p>\n"
   },
   {
-    "id": "2026-09-27-test-006",
-    "title": "Test 006",
-    "category": "burj",
-    "bgImage": "euro.jpg",
-    "date": "2026-09-27T18:20:00.000Z",
-    "content": "<p>Euro dollar parity test</p>\n"
-  },
-  {
     "id": "2026-09-27-sunday-test-004",
     "title": "Sunday Test 004",
     "category": "burj",
     "bgImage": "alexanderhamilton.jpg",
     "date": "2026-09-27T17:22:00.000Z",
     "content": "<p>1212</p>\n"
-  },
-  {
-    "id": "2026-09-27-sunday-test-003a",
-    "title": "Sunday Test 003a",
-    "category": "salisminster",
-    "bgImage": "ustreasury.jpg",
-    "date": "2026-09-27T14:41:00.000Z",
-    "content": "<p>Sunday Test Articles</p>\n"
-  },
-  {
-    "id": "2026-09-26-test2",
-    "title": "Test2",
-    "category": "salisminster",
-    "bgImage": "ustreasury.jpg",
-    "date": "2026-09-26T17:29:00.000Z",
-    "content": "<p>Taro Test</p>\n<p><img src=\"/assets/images.jpg\" alt=\"\"></p>\n<p>continuation</p>\n"
-  },
-  {
-    "id": "2026-09-26-btc-001",
-    "title": "BTC 001",
-    "category": "salisminster",
-    "bgImage": "ustreasury.jpg",
-    "date": "2026-09-26T17:10:00.000Z",
-    "content": "<p>This is a test run for running commentary on BTC    </p>\n<p><img src=\"/assets/cologne-cathedral.jpg\" alt=\"\"></p>\n<p>This is a continuation of text editor - Mashallah!</p>\n"
   }
 ]
