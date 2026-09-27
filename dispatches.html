@@ -104,6 +104,21 @@
     <img id="dynamicBlueprintImg" src="" alt="Zaha Hadid architectural line drawing blueprint">
   </div>
 
+  <!-- Synchronous Image Injection to prevent load flash -->
+  <script>
+    (function() {
+      const blueprints = [
+        'dispatch-plan-01.jpg',
+        'dispatch-plan-02.jpg',
+        'dispatch-plan-03.jpg',
+        'dispatch-plan-04.jpg'
+      ];
+      // Uses the current millisecond timestamp modulo 4 to dynamically pick a blueprint (0 to 3)
+      const index = Date.now() % blueprints.length;
+      document.getElementById('dynamicBlueprintImg').src = blueprints[index];
+    })();
+  </script>
+
   <!-- Cards container locked back to 1000px center -->
   <div class="archive-constrained">
     <div id="fullArchiveContainer" style="display: flex; flex-direction: column; gap: 24px;"></div>
@@ -130,26 +145,6 @@
 </footer>
 
 <script>
-  // ==========================================
-  // IN-HOUSE RANDOMNESS GENERATOR (TIMESTAMP BASED)
-  // ==========================================
-  function selectRandomBlueprint() {
-    const blueprints = [
-      'dispatch-plan-01.jpg',
-      'dispatch-plan-02.jpg',
-      'dispatch-plan-03.jpg',
-      'dispatch-plan-04.jpg'
-    ];
-    // Uses the current millisecond timestamp modulo 4 to dynamically pick a blueprint (0 to 3)
-    const index = Date.now() % blueprints.length;
-    const selectedImg = blueprints[index];
-    
-    const imgEl = document.getElementById('dynamicBlueprintImg');
-    if (imgEl) {
-      imgEl.src = selectedImg;
-    }
-  }
-
   let currentFilter = 'all';
   let currentLimit = 10;
   let currentPage = 1;
@@ -258,7 +253,6 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    selectRandomBlueprint();
     loadArchiveArticles();
   });
 
