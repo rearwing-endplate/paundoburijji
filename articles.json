@@ -14,6 +14,13 @@
     "content": "<p>Taro Test</p>\n<p><img src=\"/assets/images.jpg\" alt=\"\"></p>\n<p>continuation</p>\n"
   },
   {
+    "id": "2026-09-27-last-test-of-the-day",
+    "title": "Last Test of the Day",
+    "category": "burj",
+    "bgImage": "yennote.jpg",
+    "content": "<p>Final test.</p>\n"
+  },
+  {
     "id": "2026-09-27-sunday-test-003a",
     "title": "Sunday Test 003a",
     "category": "salisminster",
