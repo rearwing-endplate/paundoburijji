@@ -786,15 +786,17 @@
         </div>
       `;
     } else {
+      // Left Featured Card is permanently anchored to the absolute latest article (matched[0])
       const artFeatured = matched[0];
       const isSalisFeatured = artFeatured.category === 'salisminster';
 
+      // Right stack scrolls through the remaining historical records based on rightStackOffset
       const artStack1 = matched[rightStackOffset + 1];
       const isSalis1 = artStack1.category === 'salisminster';
       const artStack2 = matched[rightStackOffset + 2];
       const isSalis2 = artStack2.category === 'salisminster';
 
-      // Dynamic calculation for the Steel Blue Scroll Marker Bar height and position
+      // Dynamic calculation for the clean white scroll marker bar height and position
       const totalScrollable = Math.max(0, maxAvailableStack - 2); 
       let markerHeightPct = 100;
       let markerTopPct = 0;
@@ -818,9 +820,9 @@
             </div>
           </article>
 
-          <!-- Steel Blue Stack Scroll Marker Bar (Floating between columns) -->
-          <div style="position: absolute; left: calc(50% - 12px); top: 40px; bottom: 40px; width: 4px; background: rgba(124,143,156,0.12); border-radius: 2px; pointer-events: none; display: none; @media(min-width: 900px){display: block;}">
-            <div style="position: absolute; left: 0; width: 100%; background: var(--steel); border-radius: 2px; height: ${markerHeightPct}%; top: ${markerTopPct}%; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+          <!-- Clean White Stack Scroll Marker Bar (Floating in gutter) -->
+          <div style="position: absolute; left: calc(50% - 12px); top: 30px; bottom: 30px; width: 2px; background: rgba(255,255,255,0.08); border-radius: 2px; pointer-events: none;">
+            <div style="position: absolute; left: 0; width: 100%; background: #ffffff; border-radius: 2px; height: ${markerHeightPct}%; top: ${markerTopPct}%; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 8px rgba(255,255,255,0.3);"></div>
           </div>
 
           <!-- Right Column: Scrolling Slot-Reel Stack -->
