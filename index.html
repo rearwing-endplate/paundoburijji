@@ -30,6 +30,19 @@
 	<meta property="twitter:image:type" content="image/jpeg">
     <meta property="twitter:image:width" content="1200">
     <meta property="twitter:image:height" content="630">
+
+    <style>
+      @keyframes luxeElevatorUp {
+        0% { opacity: 0.2; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes luxeElevatorDown {
+        0% { opacity: 0.2; transform: translateY(-12px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .stack-anim-up { animation: luxeElevatorUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .stack-anim-down { animation: luxeElevatorDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
 </head>
 <body>
 
@@ -350,21 +363,9 @@
     </div>
   </div>
 
-  <!-- Intuitive Dynamic 1+2 Swiss Incites Container with Stack Controls -->
-  <div style="position: relative;">
-    <!-- Upward Stack Navigation Arrow -->
-    <div style="text-align: center; margin-bottom: 16px;">
-      <button id="stackScrollUpBtn" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" style="background: rgba(10,10,14,0.7); border: 1px solid var(--line); color: var(--stone); width: 44px; height: 32px; border-radius: 6px; cursor: pointer; font-family: var(--mono); font-size: 14px; transition: all 0.2s ease; opacity: 0.2; pointer-events: none;" title="Newer Incites">&uarr;</button>
-    </div>
-
-    <div id="publicArticlesContainer" style="transition: opacity 0.25s ease;">
-      <!-- Populated dynamically via JS -->
-    </div>
-
-    <!-- Downward Stack Navigation Arrow -->
-    <div style="text-align: center; margin-top: 16px;">
-      <button id="stackScrollDownBtn" onclick="scrollIncitesStack(1)" aria-label="Scroll down stack" style="background: rgba(10,10,14,0.7); border: 1px solid var(--line); color: var(--stone); width: 44px; height: 32px; border-radius: 6px; cursor: pointer; font-family: var(--mono); font-size: 14px; transition: all 0.2s ease; opacity: 0.2; pointer-events: none;" title="Older Incites">&darr;</button>
-    </div>
+  <!-- Dynamic 1+2 Swiss Incites Container -->
+  <div id="publicArticlesContainer">
+    <!-- Populated dynamically via JS -->
   </div>
 
   <div id="viewAllIncitesBtnWrap" style="margin-top: 48px; text-align: center; display: none;">
@@ -647,6 +648,7 @@
   let articles = [];
   let currentStackIndex = 0;
   let activeFilter = 'all';
+  let lastScrollDirection = 'down';
   const MAX_STACK_ITEMS = 5;
 
   async function initializeData() {
@@ -697,21 +699,19 @@
     const matched = articles.filter(a => activeFilter === 'all' || a.category === activeFilter);
     const maxIndex = Math.min(matched.length - 3, MAX_STACK_ITEMS - 3);
     
+    lastScrollDirection = direction > 0 ? 'down' : 'up';
     currentStackIndex += direction;
     if (currentStackIndex < 0) currentStackIndex = 0;
     if (currentStackIndex > maxIndex) currentStackIndex = maxIndex;
 
-    renderPublicArticles(activeFilter);
+    renderPublicArticles(activeFilter, true);
   }
 
-  function renderPublicArticles(filter = 'all') {
+  function renderPublicArticles(filter = 'all', animate = false) {
     activeFilter = filter;
     const container = document.getElementById('publicArticlesContainer');
     const viewAllWrap = document.getElementById('viewAllIncitesBtnWrap');
-    const upBtn = document.getElementById('stackScrollUpBtn');
-    const downBtn = document.getElementById('stackScrollDownBtn');
     if(!container) return;
-    container.innerHTML = '';
     
     const matched = articles.filter(a => filter === 'all' || a.category === filter);
     const count = matched.length;
@@ -720,56 +720,29 @@
       viewAllWrap.style.display = count > 3 ? 'block' : 'none';
     }
 
-    // Intuitiveness Check for Arrows
-    const maxAvailableStack = Math.min(count, MAX_STACK_ITEMS);
-    const maxIndex = Math.max(0, maxAvailableStack - 3);
-
-    if (upBtn) {
-      if (currentStackIndex > 0) {
-        upBtn.style.opacity = '1';
-        upBtn.style.pointerEvents = 'auto';
-        upBtn.style.borderColor = 'var(--gold)';
-        upBtn.style.color = 'var(--gold)';
-      } else {
-        upBtn.style.opacity = '0.2';
-        upBtn.style.pointerEvents = 'none';
-        upBtn.style.borderColor = 'var(--line)';
-        upBtn.style.color = 'var(--stone)';
-      }
-    }
-
-    if (downBtn) {
-      if (count > 3 && currentStackIndex < maxIndex) {
-        downBtn.style.opacity = '1';
-        downBtn.style.pointerEvents = 'auto';
-        downBtn.style.borderColor = 'var(--gold)';
-        downBtn.style.color = 'var(--gold)';
-      } else {
-        downBtn.style.opacity = '0.2';
-        downBtn.style.pointerEvents = 'none';
-        downBtn.style.borderColor = 'var(--line)';
-        downBtn.style.color = 'var(--stone)';
-      }
-    }
-
     if(count === 0) {
       container.innerHTML = `<p style="color:var(--stone-dim); font-style:italic; padding:40px; border:1px solid var(--line); text-align:center;">No active incites found in this category.</p>`;
-      if(upBtn) { upBtn.style.opacity = '0.2'; upBtn.style.pointerEvents = 'none'; }
-      if(downBtn) { downBtn.style.opacity = '0.2'; downBtn.style.pointerEvents = 'none'; }
       return;
     }
 
     const displayList = matched.slice(currentStackIndex, currentStackIndex + 3);
+    const maxAvailableStack = Math.min(count, MAX_STACK_ITEMS);
+    const maxIndex = Math.max(0, maxAvailableStack - 3);
+
+    const upDisabled = currentStackIndex <= 0;
+    const downDisabled = count <= 3 || currentStackIndex >= maxIndex;
 
     const getBgStyle = (art) => {
       const img = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
       return `background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${img}'); background-size: cover; background-position: center;`;
     };
 
+    let html = '';
+
     if(displayList.length === 1) {
       const art = displayList[0];
       const isSalis = art.category === 'salisminster';
-      container.innerHTML = `
+      html = `
         <article class="incite-card full-width" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
           <div>
             <h3>${art.title}</h3>
@@ -780,67 +753,89 @@
         </article>
       `;
     } else if(displayList.length === 2) {
-      let html = '<div class="swiss-incites-grid">';
       const art0 = displayList[0];
       const isSalis0 = art0.category === 'salisminster';
-      html += `
-        <article class="incite-card featured" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
-          <div>
-            <h3>${art0.title}</h3>
-            <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
-              <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-            </div>
-          </div>
-        </article>
-      `;
       const art1 = displayList[1];
       const isSalis1 = art1.category === 'salisminster';
-      html += `
-        <div style="display:flex; flex-direction:column; justify-content:center;">
-          <article class="incite-card secondary" style="${getBgStyle(art1)}" onclick="handleInciteInteraction('${art1.id}')" ontouchend="handleMobileTap(event, '${art1.id}')">
+      html = `
+        <div class="swiss-incites-grid">
+          <article class="incite-card featured" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
             <div>
-              <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art1.title}</h3>
-              <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+              <h3>${art0.title}</h3>
+              <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
+                <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
               </div>
             </div>
           </article>
+          <div style="display:flex; flex-direction:column; justify-content:center;">
+            <article class="incite-card secondary" style="${getBgStyle(art1)}" onclick="handleInciteInteraction('${art1.id}')" ontouchend="handleMobileTap(event, '${art1.id}')">
+              <div>
+                <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art1.title}</h3>
+                <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+                  <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
       `;
-      html += '</div>';
-      container.innerHTML = html;
     } else {
-      let html = '<div class="swiss-incites-grid">';
       const art0 = displayList[0];
       const isSalis0 = art0.category === 'salisminster';
-      html += `
-        <article class="incite-card featured" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
-          <div>
-            <h3>${art0.title}</h3>
-            <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
-              <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-            </div>
-          </div>
-        </article>
-      `;
-      html += '<div style="display:flex; flex-direction:column; gap:24px;">';
-      for(let i = 1; i < 3; i++) {
-        const art = displayList[i];
-        const isSalis = art.category === 'salisminster';
-        html += `
-          <article class="incite-card secondary" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
+      const art1 = displayList[1];
+      const isSalis1 = art1.category === 'salisminster';
+      const art2 = displayList[2];
+      const isSalis2 = art2.category === 'salisminster';
+
+      html = `
+        <div class="swiss-incites-grid">
+          <!-- Left Featured Card -->
+          <article class="incite-card featured" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
             <div>
-              <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art.title}</h3>
-              <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                <span class="article-tag ${isSalis ? 'salisminster' : 'burj'}">${isSalis ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+              <h3>${art0.title}</h3>
+              <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
+                <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
               </div>
             </div>
           </article>
-        `;
-      }
-      html += '</div></div>';
-      container.innerHTML = html;
+
+          <!-- Right Column: Stacked Cards Aligned with Elevator Arrows -->
+          <div style="display: flex; flex-direction: column; position: relative;">
+            <!-- Aligned Upward Arrow -->
+            <div style="text-align: center; margin-bottom: 12px;">
+              <button id="stackScrollUpBtn" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" style="background: rgba(10,10,14,0.85); border: 1px solid ${upDisabled ? 'var(--line)' : 'var(--gold)'}; color: ${upDisabled ? 'var(--stone)' : 'var(--gold)'}; width: 100%; max-width: 120px; height: 28px; border-radius: 4px; cursor: ${upDisabled ? 'not-allowed' : 'pointer'}; font-family: var(--mono); font-size: 13px; transition: all 0.2s ease; opacity: ${upDisabled ? '0.2' : '1'}; pointer-events: ${upDisabled ? 'none' : 'auto'};">&uarr; NEWER</button>
+            </div>
+
+            <!-- Stacked Secondary Cards Wrapper -->
+            <div id="stackCardsInner" class="${animate ? (lastScrollDirection === 'up' ? 'stack-anim-down' : 'stack-anim-up') : ''}" style="display: flex; flex-direction: column; gap: 24px;">
+              <article class="incite-card secondary" style="${getBgStyle(art1)}" onclick="handleInciteInteraction('${art1.id}')" ontouchend="handleMobileTap(event, '${art1.id}')">
+                <div>
+                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art1.title}</h3>
+                  <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+                    <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+                  </div>
+                </div>
+              </article>
+              <article class="incite-card secondary" style="${getBgStyle(art2)}" onclick="handleInciteInteraction('${art2.id}')" ontouchend="handleMobileTap(event, '${art2.id}')">
+                <div>
+                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art2.title}</h3>
+                  <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+                    <span class="article-tag ${isSalis2 ? 'salisminster' : 'burj'}">${isSalis2 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <!-- Aligned Downward Arrow -->
+            <div style="text-align: center; margin-top: 12px;">
+              <button id="stackScrollDownBtn" onclick="scrollIncitesStack(1)" aria-label="Scroll down stack" style="background: rgba(10,10,14,0.85); border: 1px solid ${downDisabled ? 'var(--line)' : 'var(--gold)'}; color: ${downDisabled ? 'var(--stone)' : 'var(--gold)'}; width: 100%; max-width: 120px; height: 28px; border-radius: 4px; cursor: ${downDisabled ? 'not-allowed' : 'pointer'}; font-family: var(--mono); font-size: 13px; transition: all 0.2s ease; opacity: ${downDisabled ? '0.2' : '1'}; pointer-events: ${downDisabled ? 'none' : 'auto'};">&darr; OLDER</button>
+            </div>
+          </div>
+        </div>
+      `;
     }
+
+    container.innerHTML = html;
   }
 
   document.querySelectorAll('.filter-btn').forEach(btn => {
