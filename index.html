@@ -350,9 +350,21 @@
     </div>
   </div>
 
-  <!-- Intuitive Dynamic 1+2 Swiss Incites Container (Edge-to-Edge) -->
-  <div id="publicArticlesContainer">
-    <!-- Populated dynamically via JS -->
+  <!-- Intuitive Dynamic 1+2 Swiss Incites Container with Stack Controls -->
+  <div style="position: relative;">
+    <!-- Upward Stack Navigation Arrow -->
+    <div style="text-align: center; margin-bottom: 16px;">
+      <button id="stackScrollUpBtn" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" style="background: rgba(10,10,14,0.7); border: 1px solid var(--line); color: var(--stone); width: 44px; height: 32px; border-radius: 6px; cursor: pointer; font-family: var(--mono); font-size: 14px; transition: all 0.2s ease; opacity: 0.2; pointer-events: none;" title="Newer Incites">&uarr;</button>
+    </div>
+
+    <div id="publicArticlesContainer" style="transition: opacity 0.25s ease;">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+    <!-- Downward Stack Navigation Arrow -->
+    <div style="text-align: center; margin-top: 16px;">
+      <button id="stackScrollDownBtn" onclick="scrollIncitesStack(1)" aria-label="Scroll down stack" style="background: rgba(10,10,14,0.7); border: 1px solid var(--line); color: var(--stone); width: 44px; height: 32px; border-radius: 6px; cursor: pointer; font-family: var(--mono); font-size: 14px; transition: all 0.2s ease; opacity: 0.2; pointer-events: none;" title="Older Incites">&darr;</button>
+    </div>
   </div>
 
   <div id="viewAllIncitesBtnWrap" style="margin-top: 48px; text-align: center; display: none;">
@@ -630,9 +642,12 @@
   }
 
   // ==========================================
-  // DATA PIPELINE (PAGES CMS JSON FALLBACK)
+  // DATA PIPELINE & INTUITIVE SECTION 05 STACK
   // ==========================================
   let articles = [];
+  let currentStackIndex = 0;
+  let activeFilter = 'all';
+  const MAX_STACK_ITEMS = 5;
 
   async function initializeData() {
     try {
@@ -650,24 +665,27 @@
           id: 'salis1',
           title: 'South African Refinery Access & Tier-1 Sovereign Debt Against Fiat Debasement',
           category: 'salisminster',
-          content: '<p>Salisminster maintains an unbending policy: systemic geopolitical and currency risks are answered with direct-titled tangible assets.</p>'
+          bgImage: 'ustreasury.jpg',
+          content: '<p>Salisminster maintains an unbending policy...</p>'
         },
         {
           id: 'burj1',
           title: 'MQL5 Drawdown Breakers in High-Velocity Yen Crosses (USD/JPY & GBP/JPY)',
           category: 'burj',
-          content: '<p>Burj Al-Jabr relies on mathematical discipline and native MQL5 circuit breakers.</p>'
+          bgImage: 'yennote.jpg',
+          content: '<p>Burj Al-Jabr relies on mathematical discipline...</p>'
         },
         {
           id: 'salis2',
           title: 'Productive Equities: Long-Duration Corporate Compounders as Inflation Hedges',
           category: 'salisminster',
-          content: '<p>Equities in the Salisminster nave represent permanent title to productive global enterprises.</p>'
+          bgImage: 'ustreasury.jpg',
+          content: '<p>Equities in the Salisminster nave represent permanent title...</p>'
         }
       ];
     }
 
-    // Sort chronologically by using the date stamped into the ID
+    // Sort chronologically using ID string
     articles.sort((a, b) => b.id.localeCompare(a.id));
 
     renderPublicArticles();
@@ -675,9 +693,168 @@
 
   window.addEventListener('DOMContentLoaded', initializeData);
 
+  function scrollIncitesStack(direction) {
+    const matched = articles.filter(a => activeFilter === 'all' || a.category === activeFilter);
+    const maxIndex = Math.min(matched.length - 3, MAX_STACK_ITEMS - 3);
+    
+    currentStackIndex += direction;
+    if (currentStackIndex < 0) currentStackIndex = 0;
+    if (currentStackIndex > maxIndex) currentStackIndex = maxIndex;
+
+    renderPublicArticles(activeFilter);
+  }
+
+  function renderPublicArticles(filter = 'all') {
+    activeFilter = filter;
+    const container = document.getElementById('publicArticlesContainer');
+    const viewAllWrap = document.getElementById('viewAllIncitesBtnWrap');
+    const upBtn = document.getElementById('stackScrollUpBtn');
+    const downBtn = document.getElementById('stackScrollDownBtn');
+    if(!container) return;
+    container.innerHTML = '';
+    
+    const matched = articles.filter(a => filter === 'all' || a.category === filter);
+    const count = matched.length;
+
+    if(viewAllWrap) {
+      viewAllWrap.style.display = count > 3 ? 'block' : 'none';
+    }
+
+    // Intuitiveness Check for Arrows
+    const maxAvailableStack = Math.min(count, MAX_STACK_ITEMS);
+    const maxIndex = Math.max(0, maxAvailableStack - 3);
+
+    if (upBtn) {
+      if (currentStackIndex > 0) {
+        upBtn.style.opacity = '1';
+        upBtn.style.pointerEvents = 'auto';
+        upBtn.style.borderColor = 'var(--gold)';
+        upBtn.style.color = 'var(--gold)';
+      } else {
+        upBtn.style.opacity = '0.2';
+        upBtn.style.pointerEvents = 'none';
+        upBtn.style.borderColor = 'var(--line)';
+        upBtn.style.color = 'var(--stone)';
+      }
+    }
+
+    if (downBtn) {
+      if (count > 3 && currentStackIndex < maxIndex) {
+        downBtn.style.opacity = '1';
+        downBtn.style.pointerEvents = 'auto';
+        downBtn.style.borderColor = 'var(--gold)';
+        downBtn.style.color = 'var(--gold)';
+      } else {
+        downBtn.style.opacity = '0.2';
+        downBtn.style.pointerEvents = 'none';
+        downBtn.style.borderColor = 'var(--line)';
+        downBtn.style.color = 'var(--stone)';
+      }
+    }
+
+    if(count === 0) {
+      container.innerHTML = `<p style="color:var(--stone-dim); font-style:italic; padding:40px; border:1px solid var(--line); text-align:center;">No active incites found in this category.</p>`;
+      if(upBtn) { upBtn.style.opacity = '0.2'; upBtn.style.pointerEvents = 'none'; }
+      if(downBtn) { downBtn.style.opacity = '0.2'; downBtn.style.pointerEvents = 'none'; }
+      return;
+    }
+
+    const displayList = matched.slice(currentStackIndex, currentStackIndex + 3);
+
+    const getBgStyle = (art) => {
+      const img = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
+      return `background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${img}'); background-size: cover; background-position: center;`;
+    };
+
+    if(displayList.length === 1) {
+      const art = displayList[0];
+      const isSalis = art.category === 'salisminster';
+      container.innerHTML = `
+        <article class="incite-card full-width" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
+          <div>
+            <h3>${art.title}</h3>
+            <div class="swiss-num" style="margin-top: 14px; margin-bottom: 0;">
+              <span class="article-tag ${isSalis ? 'salisminster' : 'burj'}">${isSalis ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+            </div>
+          </div>
+        </article>
+      `;
+    } else if(displayList.length === 2) {
+      let html = '<div class="swiss-incites-grid">';
+      const art0 = displayList[0];
+      const isSalis0 = art0.category === 'salisminster';
+      html += `
+        <article class="incite-card featured" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
+          <div>
+            <h3>${art0.title}</h3>
+            <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
+              <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+            </div>
+          </div>
+        </article>
+      `;
+      const art1 = displayList[1];
+      const isSalis1 = art1.category === 'salisminster';
+      html += `
+        <div style="display:flex; flex-direction:column; justify-content:center;">
+          <article class="incite-card secondary" style="${getBgStyle(art1)}" onclick="handleInciteInteraction('${art1.id}')" ontouchend="handleMobileTap(event, '${art1.id}')">
+            <div>
+              <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art1.title}</h3>
+              <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+                <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      `;
+      html += '</div>';
+      container.innerHTML = html;
+    } else {
+      let html = '<div class="swiss-incites-grid">';
+      const art0 = displayList[0];
+      const isSalis0 = art0.category === 'salisminster';
+      html += `
+        <article class="incite-card featured" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
+          <div>
+            <h3>${art0.title}</h3>
+            <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
+              <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+            </div>
+          </div>
+        </article>
+      `;
+      html += '<div style="display:flex; flex-direction:column; gap:24px;">';
+      for(let i = 1; i < 3; i++) {
+        const art = displayList[i];
+        const isSalis = art.category === 'salisminster';
+        html += `
+          <article class="incite-card secondary" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
+            <div>
+              <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art.title}</h3>
+              <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+                <span class="article-tag ${isSalis ? 'salisminster' : 'burj'}">${isSalis ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+      html += '</div></div>';
+      container.innerHTML = html;
+    }
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentStackIndex = 0; // Reset stack window on filter switch
+      renderPublicArticles(e.target.getAttribute('data-filter'));
+    });
+  });
+
   function saveArticlesToStorage() {
     localStorage.setItem('poundbridge_articles', JSON.stringify(articles));
-    renderPublicArticles();
+    renderPublicArticles(activeFilter);
     if (document.getElementById('principalDashboardView')?.style.display === 'block') {
       renderCMSList();
     }
@@ -697,119 +874,6 @@
     }
     lastTouchTime = currentTime;
   }
-
-  // ==========================================
-  // INCITES RENDER ENGINE
-  // ==========================================
-  function renderPublicArticles(filter = 'all') {
-    const container = document.getElementById('publicArticlesContainer');
-    const viewAllWrap = document.getElementById('viewAllIncitesBtnWrap');
-    if(!container) return;
-    container.innerHTML = '';
-    
-    const matched = articles.filter(a => filter === 'all' || a.category === filter);
-    const count = matched.length;
-    const displayList = matched.slice(0, 3);
-
-    if(count === 0) {
-      container.innerHTML = `<p style="color:var(--stone-dim); font-style:italic; padding:40px; border:1px solid var(--line); text-align:center;">No active incites found in this category.</p>`;
-      if(viewAllWrap) viewAllWrap.style.display = 'none';
-      return;
-    }
-
-    if(viewAllWrap) {
-      viewAllWrap.style.display = count > 3 ? 'block' : 'none';
-    }
-
-    const getBgStyle = (cat) => {
-      const img = cat === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg';
-      return `background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${img}'); background-size: cover; background-position: center;`;
-    };
-
-    if(displayList.length === 1) {
-      const art = displayList[0];
-      const isSalis = art.category === 'salisminster';
-      container.innerHTML = `
-        <article class="incite-card full-width" style="${getBgStyle(art.category)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
-          <div>
-            <h3>${art.title}</h3>
-            <div class="swiss-num" style="margin-top: 14px; margin-bottom: 0;">
-              <span class="article-tag ${isSalis ? 'salisminster' : 'burj'}">${isSalis ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-            </div>
-          </div>
-        </article>
-      `;
-    } else if(displayList.length === 2) {
-      let html = '<div class="swiss-incites-grid">';
-      const art0 = displayList[0];
-      const isSalis0 = art0.category === 'salisminster';
-      html += `
-        <article class="incite-card featured" style="${getBgStyle(art0.category)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
-          <div>
-            <h3>${art0.title}</h3>
-            <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
-              <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-            </div>
-          </div>
-        </article>
-      `;
-      const art1 = displayList[1];
-      const isSalis1 = art1.category === 'salisminster';
-      html += `
-        <div style="display:flex; flex-direction:column; justify-content:center;">
-          <article class="incite-card secondary" style="${getBgStyle(art1.category)}" onclick="handleInciteInteraction('${art1.id}')" ontouchend="handleMobileTap(event, '${art1.id}')">
-            <div>
-              <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art1.title}</h3>
-              <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-              </div>
-            </div>
-          </article>
-        </div>
-      `;
-      html += '</div>';
-      container.innerHTML = html;
-    } else {
-      let html = '<div class="swiss-incites-grid">';
-      const art0 = displayList[0];
-      const isSalis0 = art0.category === 'salisminster';
-      html += `
-        <article class="incite-card featured" style="${getBgStyle(art0.category)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
-          <div>
-            <h3>${art0.title}</h3>
-            <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
-              <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-            </div>
-          </div>
-        </article>
-      `;
-      html += '<div style="display:flex; flex-direction:column; gap:24px;">';
-      for(let i = 1; i < 3; i++) {
-        const art = displayList[i];
-        const isSalis = art.category === 'salisminster';
-        html += `
-          <article class="incite-card secondary" style="${getBgStyle(art.category)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
-            <div>
-              <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art.title}</h3>
-              <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                <span class="article-tag ${isSalis ? 'salisminster' : 'burj'}">${isSalis ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-              </div>
-            </div>
-          </article>
-        `;
-      }
-      html += '</div></div>';
-      container.innerHTML = html;
-    }
-  }
-
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      renderPublicArticles(e.target.getAttribute('data-filter'));
-    });
-  });
 
   // ==========================================
   // MODALS & NAVIGATION
@@ -865,7 +929,6 @@
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // PASTE YOUR GENERATED HASH STRING BELOW:
     const targetHash = 'f98233e0b90fd49f9dec02c5fe2409e03f13a23ce59074510059837083c94d61';
 
     if (inputHash === targetHash) { 
@@ -1038,25 +1101,20 @@
     const email = document.getElementById('enqEmail').value;
     const message = document.getElementById('enqMessage').value;
     
-    // REPLACE THESE TWO STRINGS WITH YOUR WEB3FORMS KEYS
     const accessKey = cat === 'general' ? '003f3f30-3462-40ee-9186-c6a95f72f303' : '5984889b-16be-40ca-a265-6fedc1ced8ad';
-    
     const subjectPrefix = cat === 'general' ? '[Salisminster Desk]' : '[Burj Al-Jabr Desk]';
     const submitBtn = document.querySelector('.apple-submit-btn');
     const originalText = submitBtn.innerText;
     
-    // Fallback Function to trigger native mail client
     const triggerMailtoFallback = () => {
-      // REPLACE THESE WITH YOUR ACTUAL EMAIL ADDRESSES
       const targetEmail = cat === 'general' ? 'principal@poundbridge.co.za' : 'quant@poundbridge.co.za';
-      
       const mailtoSubject = encodeURIComponent(`${subjectPrefix} Encrypted Correspondence`);
       const mailtoBody = encodeURIComponent(`From: ${name}\nReturn Address: ${email}\n\nMessage:\n${message}`);
       
       const successDiv = document.getElementById('enqSuccess');
       successDiv.innerText = 'API limit reached. Launching native secure client...';
       successDiv.style.display = 'block';
-      successDiv.style.color = '#c8a35e'; // Gold warning color
+      successDiv.style.color = '#c8a35e';
       
       window.location.href = `mailto:${targetEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
     };
@@ -1077,18 +1135,15 @@
       });
 
       if (response.status === 200) {
-        // Primary Route: Web3Forms Success
         const successDiv = document.getElementById('enqSuccess');
         successDiv.innerText = 'Signal successfully routed to the designated desk.';
         successDiv.style.display = 'block';
         successDiv.style.color = 'var(--stone)';
         document.getElementById('enquiryForm').reset();
       } else {
-        // Secondary Route: Web3Forms returned an error (e.g., limit reached)
         triggerMailtoFallback();
       }
     } catch (error) {
-      // Tertiary Route: Network blocked by browser/ad-blocker
       triggerMailtoFallback();
     } finally {
       submitBtn.innerText = originalText;

@@ -46,12 +46,20 @@ jobs:
             const id = parsed.data.id || path.basename(file, path.extname(file));
             const title = parsed.data.title || "Untitled";
             const category = parsed.data.category || "salisminster";
+            
+            // Map background asset: Salisminster always uses ustreasury.jpg; Burj uses chosen bgImage or defaults to yennote.jpg
+            let bgImage = "ustreasury.jpg";
+            if (category === "burj") {
+              bgImage = parsed.data.bgImage || "yennote.jpg";
+            }
+
             const htmlContent = marked.parse(parsed.content);
 
             articles.push({
               id: id,
               title: title,
               category: category,
+              bgImage: bgImage,
               content: htmlContent
             });
           });
@@ -65,4 +73,4 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add articles.json
-          git diff --staged --quiet || (git commit -m "Auto-compile articles.json from Pages CMS dispatches" && git push)
+          git diff --staged --quiet || (git commit -m "Auto-compile articles.json with 1+3 background asset mapping" && git push)
