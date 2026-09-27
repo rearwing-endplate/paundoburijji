@@ -2,8 +2,8 @@
   {
     "id": "2026-09-26-btc-001",
     "title": "BTC 001",
-    "category": "burj",
-    "bgImage": "yennote.jpg",
+    "category": "salisminster",
+    "bgImage": "ustreasury.jpg",
     "content": "<p>This is a test run for running commentary on BTC    </p>\n<p><img src=\"/assets/cologne-cathedral.jpg\" alt=\"\"></p>\n<p>This is a continuation of text editor - Mashallah!</p>\n"
   },
   {
@@ -19,5 +19,12 @@
     "category": "salisminster",
     "bgImage": "ustreasury.jpg",
     "content": "<p>Sunday Test Articles</p>\n"
+  },
+  {
+    "id": "2026-09-27-sunday-test-004",
+    "title": "Sunday Test 004",
+    "category": "burj",
+    "bgImage": "alexanderhamilton.jpg",
+    "content": "<p>1212</p>\n"
   }
 ]
