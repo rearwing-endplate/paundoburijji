@@ -718,90 +718,30 @@
     const fromY = -(previousOffset * pitch);
     const toY = -(nextOffset * pitch);
 
-    // Cancel any previous reel motion cleanly.
     if (track.__reelAnimation) {
       try { track.__reelAnimation.cancel(); } catch (_) {}
       track.__reelAnimation = null;
     }
 
+    const controls = document.querySelectorAll('.slot-control');
+    controls.forEach(btn => { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); });
+
     track.classList.add('is-spinning');
     track.style.transform = `translate3d(0, ${fromY}px, 0)`;
-    track.style.filter = 'blur(0.6px) saturate(0.94)';
-
-    // Force the starting state to be committed before the reel moves.
+    track.style.filter = 'blur(0) saturate(1)';
     void track.offsetWidth;
 
     const travel = toY - fromY;
     const travelDir = travel < 0 ? -1 : 1;
-    const overshoot = 9 * travelDir;
-    const rebound = 2.5 * travelDir;
+    const overshoot = 4.5 * travelDir;
+    const rebound = 1.2 * travelDir;
 
-    if (typeof track.animate === 'function') {
-      const animation = track.animate([
-        {
-          transform: `translate3d(0, ${fromY}px, 0)`,
-          filter: 'blur(0.5px) saturate(0.94)'
-        },
-        {
-          transform: `translate3d(0, ${fromY + travel * 0.42}px, 0)`,
-          filter: 'blur(5.5px) saturate(0.60)',
-          offset: 0.34
-        },
-        {
-          transform: `translate3d(0, ${toY + overshoot}px, 0)`,
-          filter: 'blur(3px) saturate(0.72)',
-          offset: 0.82
-        },
-        {
-          transform: `translate3d(0, ${toY - rebound}px, 0)`,
-          filter: 'blur(0.8px) saturate(0.92)',
-          offset: 0.94
-        },
-        {
-          transform: `translate3d(0, ${toY}px, 0)`,
-          filter: 'blur(0) saturate(1)'
-        }
-      ], {
-        duration: 1180,
-        easing: 'cubic-bezier(0.08, 0.72, 0.12, 1)',
-        fill: 'forwards'
-      });
-
-      track.__reelAnimation = animation;
-      animation.finished.then(() => {
-        track.style.transform = `translate3d(0, ${toY}px, 0)`;
-        track.style.filter = '';
-        track.classList.remove('is-spinning');
-        track.__reelAnimation = null;
-
-        // The card that entered the viewing area is the "winning" card.
-        const winnerIndex = direction > 0
-          ? nextOffset + 1
-          : nextOffset;
-        const winner = track.querySelector(`[data-reel-index="${winnerIndex}"]`);
-        if (winner) {
-          winner.classList.remove('reel-win');
-          void winner.offsetWidth;
-          winner.classList.add('reel-win');
-        }
-      }).catch(() => {
-        track.style.transform = `translate3d(0, ${toY}px, 0)`;
-        track.style.filter = '';
-        track.classList.remove('is-spinning');
-        track.__reelAnimation = null;
-      });
-      return;
-    }
-
-    // CSS-transition fallback for browsers without the Web Animations API.
-    track.style.transition = 'transform 1.18s cubic-bezier(0.08, 0.72, 0.12, 1), filter 1.18s ease';
-    requestAnimationFrame(() => {
+    const finish = () => {
       track.style.transform = `translate3d(0, ${toY}px, 0)`;
-      track.style.filter = 'blur(0) saturate(1)';
-    });
-    window.setTimeout(() => {
-      track.classList.remove('is-spinning');
-      track.style.transition = '';
+      track.style.filter = '';
+      track.classList.remove('is-spinning', 'is-settling');
+      track.__reelAnimation = null;
+
       const winnerIndex = direction > 0 ? nextOffset + 1 : nextOffset;
       const winner = track.querySelector(`[data-reel-index="${winnerIndex}"]`);
       if (winner) {
@@ -809,7 +749,51 @@
         void winner.offsetWidth;
         winner.classList.add('reel-win');
       }
-    }, 1220);
+
+      const matched = articles.filter(a => activeFilter === 'all' || a.category === activeFilter);
+      const stackItems = matched.slice(1, MAX_STACK_ITEMS);
+      const maxOffset = Math.max(0, stackItems.length - 2);
+      const upBtn = document.getElementById('stackScrollUpBtn');
+      const downBtn = document.getElementById('stackScrollDownBtn');
+      if (upBtn) {
+        upBtn.disabled = rightStackOffset <= 0;
+        upBtn.removeAttribute('aria-busy');
+      }
+      if (downBtn) {
+        downBtn.disabled = rightStackOffset >= maxOffset;
+        downBtn.removeAttribute('aria-busy');
+      }
+    };
+
+    if (typeof track.animate === 'function') {
+      const animation = track.animate([
+        { transform: `translate3d(0, ${fromY}px, 0)`, filter: 'blur(0px) saturate(1)', offset: 0, easing: 'ease-in' },
+        { transform: `translate3d(0, ${fromY + travel * 0.14}px, 0)`, filter: 'blur(2.4px) saturate(0.78)', offset: 0.10, easing: 'cubic-bezier(0.45, 0, 0.8, 0.2)' },
+        { transform: `translate3d(0, ${fromY + travel * 0.46}px, 0)`, filter: 'blur(1.5px) saturate(0.86)', offset: 0.40, easing: 'cubic-bezier(0.2, 0.6, 0.25, 1)' },
+        { transform: `translate3d(0, ${fromY + travel * 0.74}px, 0)`, filter: 'blur(0.55px) saturate(0.94)', offset: 0.68, easing: 'cubic-bezier(0.16, 0.78, 0.25, 1)' },
+        { transform: `translate3d(0, ${toY + overshoot}px, 0)`, filter: 'blur(0.16px) saturate(0.99)', offset: 0.90, easing: 'cubic-bezier(0.12, 0.82, 0.18, 1)' },
+        { transform: `translate3d(0, ${toY - rebound}px, 0)`, filter: 'blur(0px) saturate(1)', offset: 0.965, easing: 'cubic-bezier(0.2, 0.85, 0.22, 1)' },
+        { transform: `translate3d(0, ${toY}px, 0)`, filter: 'blur(0px) saturate(1)', offset: 1 }
+      ], {
+        duration: 1820,
+        fill: 'forwards'
+      });
+
+      track.__reelAnimation = animation;
+      animation.finished.then(finish).catch(finish);
+      return;
+    }
+
+    track.style.transition = 'transform 1.82s cubic-bezier(0.12, 0.72, 0.15, 1), filter 0.48s ease-out';
+    track.style.filter = 'blur(1.8px) saturate(.84)';
+    requestAnimationFrame(() => {
+      track.style.transform = `translate3d(0, ${toY}px, 0)`;
+      requestAnimationFrame(() => { track.style.filter = 'blur(0) saturate(1)'; });
+    });
+    window.setTimeout(() => {
+      track.style.transition = '';
+      finish();
+    }, 1860);
   }
 
   function scrollIncitesStack(direction) {
