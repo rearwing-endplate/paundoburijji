@@ -7,38 +7,42 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="styles.css">
 <style>
-  /* Wrapper that stretches dynamically based on the number of loaded incites */
-  .archive-content-wrapper {
+  /* Full-bleed wrapper for the edge-to-edge background */
+  .archive-full-bleed {
     position: relative;
     width: 100%;
     min-height: 400px;
-    padding: 24px 0; /* Breathing room so the blueprint shows above/below the cards */
+    padding: 24px 0;
+    overflow: hidden; /* Prevents any accidental horizontal scrolling */
   }
 
-  /* The dynamic architectural blueprint background */
+  /* The dynamic architectural blueprint background spanning full width */
   .blueprint-underlay {
     position: absolute;
     inset: 0;
     z-index: 0;
     pointer-events: none; /* Allows clicks to pass through to the cards */
-    opacity: 0.9;
   }
 
   .blueprint-underlay img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: top right; /* Anchors the architectural focal point to the right */
+    object-position: right center; /* Anchors the architectural focal point to the far right */
     
-    /* The Trading Fade: Solid on the right (0%), fading to transparent on the left (90%) */
-    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0) 90%);
-    mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0) 90%);
+    /* The Trading Fade: Solid on the right edge (0%), fading smoothly to pure blackness on the left (85%) */
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 85%);
+    mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 85%);
+    opacity: 0.85; /* Softened slightly so it doesn't overpower the cards */
   }
 
-  /* Keep the cards above the blueprint */
-  #fullArchiveContainer {
+  /* Inner container keeping the cards neatly aligned to 1000px */
+  .archive-constrained {
     position: relative;
     z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 24px;
   }
 
   .limit-btn { background: transparent; border: 1px solid var(--line); color: var(--stone-dim); padding: 4px 10px; cursor: pointer; font-family: var(--mono); font-size: 11px; transition: all 0.2s ease; }
@@ -72,7 +76,8 @@
   </nav>
 </header>
 
-<main style="padding: 140px 24px 120px; max-width: 1000px; margin: 0 auto;">
+<!-- Header & Filters locked to 1000px -->
+<main style="padding: 140px 24px 0; max-width: 1000px; margin: 0 auto;">
   <div class="swiss-num">[ ARCHIVAL REPOSITORY ]</div>
   <div class="eyebrow" style="margin-bottom: 8px;">Temple Incites Archive</div>
   <h1 style="font-family: var(--display); font-size: clamp(32px, 4.5vw, 54px); font-weight: 400; line-height: 1.15; margin-bottom: 30px; color: #ffffff;">Data &amp; Intelligence Stack</h1>
@@ -91,19 +96,24 @@
       <button class="limit-btn" data-limit="25" onclick="setArchiveLimit(25)">25</button>
     </div>
   </div>
+</main>
 
-  <!-- DYNAMIC RANDOMLY SELECTED ARCHITECTURAL BLUEPRINT (FADING RIGHT TO LEFT) -->
-  <div class="archive-content-wrapper">
-    <div class="blueprint-underlay">
-      <img id="dynamicBlueprintImg" src="" alt="Zaha Hadid architectural line drawing blueprint">
-    </div>
-
-    <!-- The list of incites sits on top of the underlay -->
-    <div id="fullArchiveContainer" style="display: flex; flex-direction: column; gap: 24px;"></div>
+<!-- Edge-to-Edge Dynamic Blueprint Container -->
+<section class="archive-full-bleed">
+  <div class="blueprint-underlay">
+    <img id="dynamicBlueprintImg" src="" alt="Zaha Hadid architectural line drawing blueprint">
   </div>
 
+  <!-- Cards container locked back to 1000px center -->
+  <div class="archive-constrained">
+    <div id="fullArchiveContainer" style="display: flex; flex-direction: column; gap: 24px;"></div>
+  </div>
+</section>
+
+<!-- Pagination locked to 1000px -->
+<div style="max-width: 1000px; margin: 0 auto; padding: 0 24px 120px;">
   <div id="paginationFooter" style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--stone-dim);"></div>
-</main>
+</div>
 
 <footer>
   <div class="wrap">
@@ -130,7 +140,7 @@
       'dispatch-plan-03.jpg',
       'dispatch-plan-04.jpg'
     ];
-    // Uses the current millisecond timestamp modulo 4 to pick an index (0 to 3)
+    // Uses the current millisecond timestamp modulo 4 to dynamically pick a blueprint (0 to 3)
     const index = Date.now() % blueprints.length;
     const selectedImg = blueprints[index];
     
