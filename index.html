@@ -639,7 +639,7 @@
   let rightStackOffset = 0;
   let activeFilter = 'all';
   let lastScrollDirection = 'down';
-  const MAX_STACK_ITEMS = 12; // 1 anchored main window + up to 11 reel windows
+  const MAX_STACK_ITEMS = 12;
 
   async function initializeData() {
     try {
@@ -652,33 +652,18 @@
     }
 
     if (articles.length === 0) {
-      articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [
-        {
-          id: 'salis1',
-          title: 'South African Refinery Access & Tier-1 Sovereign Debt Against Fiat Debasement',
-          category: 'salisminster',
-          bgImage: 'ustreasury.jpg',
-          content: '<p>Salisminster maintains an unbending policy...</p>'
-        },
-        {
-          id: 'burj1',
-          title: 'MQL5 Drawdown Breakers in High-Velocity Yen Crosses (USD/JPY & GBP/JPY)',
-          category: 'burj',
-          bgImage: 'yennote.jpg',
-          content: '<p>Burj Al-Jabr relies on mathematical discipline...</p>'
-        },
-        {
-          id: 'salis2',
-          title: 'Productive Equities: Long-Duration Corporate Compounders as Inflation Hedges',
-          category: 'salisminster',
-          bgImage: 'ustreasury.jpg',
-          content: '<p>Equities in the Salisminster nave represent permanent title...</p>'
-        }
-      ];
+      articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
-    // Sort chronologically using ID string
-    articles.sort((a, b) => b.id.localeCompare(a.id));
+    // Robust chronological sort: newest publication date first, falling back to ID string comparison
+    articles.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      if (dateA !== dateB) {
+        return dateB - dateA;
+      }
+      return b.id.localeCompare(a.id);
+    });
 
     renderPublicArticles();
   }
@@ -733,9 +718,7 @@
     const travel = toY - fromY;
     const travelDir = travel < 0 ? -1 : 1;
     const overshoot = 3.2 * travelDir;
-    //const travelDuration = 1180;
     const travelDuration = 610;
-    //const settleDuration = 150;
     const settleDuration = 55;
 
     track.classList.add('is-spinning');
@@ -949,7 +932,7 @@
             </div>
           </article>
 
-          <!-- white mechanical position bar: explicitly between the two window systems -->
+          <!-- white mechanical position bar -->
           <div class="reel-gutter" aria-hidden="true">
             <div class="reel-rail">
               <div class="reel-rail-track"></div>
@@ -957,7 +940,7 @@
             </div>
           </div>
 
-          <!-- 2: the only moving windows -->
+          <!-- 2: moving windows -->
           <div class="reel-column">
             <div class="slot-controls">
               <button id="stackScrollUpBtn" class="slot-control" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" ${upDisabled ? 'disabled' : ''}>
@@ -999,18 +982,10 @@
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
-      rightStackOffset = 0; // Reset right stack on filter switch
+      rightStackOffset = 0;
       renderPublicArticles(e.target.getAttribute('data-filter'));
     });
   });
-
-  function saveArticlesToStorage() {
-    localStorage.setItem('poundbridge_articles', JSON.stringify(articles));
-    renderPublicArticles(activeFilter);
-    if (document.getElementById('principalDashboardView')?.style.display === 'block') {
-      renderCMSList();
-    }
-  }
 
   let lastTouchTime = 0;
   function handleInciteInteraction(articleId) {
@@ -1027,9 +1002,6 @@
     lastTouchTime = currentTime;
   }
 
-  // ==========================================
-  // MODALS & NAVIGATION
-  // ==========================================
   function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
   function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
 
@@ -1041,22 +1013,16 @@
   }
   if(hamburgerToggle) hamburgerToggle.addEventListener('click', toggleMobileMenu);
 
-  // ==========================================
-  // SECURE AUTHENTICATION & AUTO-LOGOUT
-  // ==========================================
   let inactivityTimeout;
-  const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes
+  const INACTIVITY_LIMIT = 5 * 60 * 1000;
 
   function secureLogout() {
     const dashboard = document.getElementById('principalDashboardView');
     const authView = document.getElementById('principalAuthView');
     if(dashboard) dashboard.style.display = 'none';
     if(authView) authView.style.display = 'block';
-    
     const keyInput = document.getElementById('principalKey');
     if (keyInput) keyInput.value = '';
-    
-    if (typeof cancelEditor === 'function') cancelEditor();
     clearTimeout(inactivityTimeout);
   }
 
@@ -1075,238 +1041,21 @@
   async function handlePrincipalLogin(e) {
     e.preventDefault();
     const inputKey = document.getElementById('principalKey').value;
-    
     const msgBuffer = new TextEncoder().encode(inputKey);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
     const targetHash = 'f98233e0b90fd49f9dec02c5fe2409e03f13a23ce59074510059837083c94d61';
 
     if (inputHash === targetHash) { 
       document.getElementById('principalAuthView').style.display = 'none';
       document.getElementById('principalDashboardView').style.display = 'block';
-      renderCMSList();
       resetInactivityTimer();
     } else { 
       alert('Invalid principal credential.'); 
     }
   }
 
-  // ==========================================
-  // CMS CRUD LOGIC
-  // ==========================================
-  function renderCMSList() {
-    const list = document.getElementById('cmsArticlesList');
-    if(!list) return;
-    list.innerHTML = '';
-    articles.forEach(art => {
-      list.innerHTML += `
-        <div class="cms-article-row" style="display:flex; justify-content:space-between; align-items:center; padding:18px 0; border-bottom:1px solid rgba(255,255,255,0.08); gap:20px;">
-          <div class="cms-info" style="flex:1; min-width:0;">
-            <h4 style="font-family:var(--display); font-size:18px; font-weight:400; color:var(--stone); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${art.title}</h4>
-            <span style="font-family:var(--mono); font-size:11px; color:var(--stone-dim); text-transform:uppercase;">${art.category}</span>
-          </div>
-          <div class="cms-actions" style="display:flex; gap:10px; flex-shrink:0;">
-            <button onclick="editArticle('${art.id}')" style="padding:8px 18px; font-family:var(--mono); font-size:11px; font-weight:500; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--stone); border-radius:9999px; cursor:pointer; white-space:nowrap; transition:all 0.2s ease;">Edit</button>
-            <button class="del" onclick="deleteArticle('${art.id}')" style="padding:8px 18px; font-family:var(--mono); font-size:11px; font-weight:500; background:rgba(217,107,120,0.08); border:1px solid rgba(217,107,120,0.3); color:#d96b78; border-radius:9999px; cursor:pointer; white-space:nowrap; transition:all 0.2s ease;">Remove</button>
-          </div>
-        </div>
-      `;
-    });
-  }
-
-  function handleDocxUpload(e) {
-    const file = e.target.files[0];
-    const status = document.getElementById('docxUploadStatus');
-    if(!file) return;
-
-    status.textContent = 'Parsing file…';
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      if(typeof mammoth !== 'undefined') {
-        mammoth.convertToHtml({ arrayBuffer: evt.target.result })
-          .then(function(result) {
-            document.getElementById('artContent').value = result.value;
-            status.textContent = 'File successfully converted to HTML.';
-            status.style.color = 'var(--gold)';
-          }).catch(function(err) {
-            status.textContent = 'Error parsing DOCX file.';
-            status.style.color = '#d96b78';
-          });
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  function showNewArticleForm() {
-    document.getElementById('editorTitleMode').innerText = 'Draft New Incite';
-    document.getElementById('editArticleId').value = '';
-    document.getElementById('artTitle').value = '';
-    document.getElementById('artBgImage').value = 'ustreasury.jpg';
-    document.getElementById('artContent').value = '';
-    document.getElementById('articleEditorBox').style.display = 'block';
-    resetInactivityTimer();
-  }
-
-  function cancelEditor() { 
-    const editor = document.getElementById('articleEditorBox');
-    if(editor) editor.style.display = 'none'; 
-  }
-
-  function saveArticle(e) {
-    e.preventDefault();
-    const idField = document.getElementById('editArticleId').value;
-    const title = document.getElementById('artTitle').value;
-    const bgImage = document.getElementById('artBgImage').value;
-    const category = (bgImage === 'ustreasury.jpg') ? 'salisminster' : 'burj';
-    const content = document.getElementById('artContent').value;
-
-    if(idField) {
-      const art = articles.find(a => a.id === idField);
-      if(art) { art.title = title; art.bgImage = bgImage; art.category = category; art.content = content; }
-    } else {
-      articles.unshift({ id: 'art_' + Date.now(), title, category, bgImage, content });
-    }
-
-    saveArticlesToStorage();
-    cancelEditor();
-    resetInactivityTimer();
-  }
-
-  function editArticle(id) {
-    const art = articles.find(a => a.id === id);
-    if(!art) return;
-    document.getElementById('editorTitleMode').innerText = 'Edit Incite';
-    document.getElementById('editArticleId').value = art.id;
-    document.getElementById('artTitle').value = art.title;
-    document.getElementById('artBgImage').value = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
-    document.getElementById('artContent').value = art.content;
-    document.getElementById('articleEditorBox').style.display = 'block';
-    resetInactivityTimer();
-  }
-
-  function deleteArticle(id) {
-    if(confirm('Remove this incite permanently?')) {
-      articles = articles.filter(a => a.id !== id);
-      saveArticlesToStorage();
-      resetInactivityTimer();
-    }
-  }
-
-  // ==========================================
-  // DUAL DESK WEB3FORMS ROUTING
-  // ==========================================
-  function switchDesk(cat) {
-    const segControl = document.getElementById('deskSegmentedControl');
-    const commsCard = document.getElementById('commsCard');
-    const enqCategoryInput = document.getElementById('enqCategory');
-    const tabs = document.querySelectorAll('.apple-segmented-control .enq-tab');
-
-    enqCategoryInput.value = cat;
-
-    tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-category') === cat));
-    if (cat === 'mql5_quant') {
-      segControl.classList.add('burj-active');
-      commsCard.classList.add('burj-warmth');
-    } else {
-      segControl.classList.remove('burj-active');
-      commsCard.classList.remove('burj-warmth');
-    }
-
-    const isGeneral = (cat === 'general');
-    const currDesc = isGeneral ? document.getElementById('enqDescMql5_quant') : document.getElementById('enqDescGeneral');
-    const nextDesc = isGeneral ? document.getElementById('enqDescGeneral') : document.getElementById('enqDescMql5_quant');
-
-    const currField = document.querySelector(`.enq-fields[data-fields-for="${isGeneral ? 'mql5_quant' : 'general'}"]`);
-    const nextField = document.querySelector(`.enq-fields[data-fields-for="${cat}"]`);
-
-    currDesc.classList.remove('morph-in');
-    currDesc.classList.add('morph-out');
-    if (currField) {
-      currField.classList.remove('morph-in');
-      currField.classList.add('morph-out');
-    }
-
-    setTimeout(() => {
-      currDesc.style.display = 'none';
-      if (currField) currField.style.display = 'none';
-
-      nextDesc.style.display = 'block';
-      if (nextField) nextField.style.display = 'block';
-
-      void nextDesc.offsetWidth;
-      if (nextField) void nextField.offsetWidth;
-
-      nextDesc.classList.remove('morph-out');
-      nextDesc.classList.add('morph-in');
-      if (nextField) {
-        nextField.classList.remove('morph-out');
-        nextField.classList.add('morph-in');
-      }
-    }, 190);
-  }
-
-  document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const cat = document.getElementById('enqCategory').value;
-    const name = document.getElementById('enqName').value;
-    const email = document.getElementById('enqEmail').value;
-    const message = document.getElementById('enqMessage').value;
-    
-    const accessKey = cat === 'general' ? '003f3f30-3462-40ee-9186-c6a95f72f303' : '5984889b-16be-40ca-a265-6fedc1ced8ad';
-    const subjectPrefix = cat === 'general' ? '[Salisminster Desk]' : '[Burj Al-Jabr Desk]';
-    const submitBtn = document.querySelector('.apple-submit-btn');
-    const originalText = submitBtn.innerText;
-    
-    const triggerMailtoFallback = () => {
-      const targetEmail = cat === 'general' ? 'principal@poundbridge.co.za' : 'quant@poundbridge.co.za';
-      const mailtoSubject = encodeURIComponent(`${subjectPrefix} Encrypted Correspondence`);
-      const mailtoBody = encodeURIComponent(`From: ${name}\nReturn Address: ${email}\n\nMessage:\n${message}`);
-      
-      const successDiv = document.getElementById('enqSuccess');
-      successDiv.innerText = 'API limit reached. Launching native secure client...';
-      successDiv.style.display = 'block';
-      successDiv.style.color = '#c8a35e';
-      
-      window.location.href = `mailto:${targetEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
-    };
-
-    submitBtn.innerText = 'TRANSMITTING...';
-
-    try {
-      const response = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ 
-          access_key: accessKey, 
-          subject: `${subjectPrefix} Encrypted Correspondence`, 
-          from_name: name, 
-          email: email, 
-          message: message 
-        })
-      });
-
-      if (response.status === 200) {
-        const successDiv = document.getElementById('enqSuccess');
-        successDiv.innerText = 'Signal successfully routed to the designated desk.';
-        successDiv.style.display = 'block';
-        successDiv.style.color = 'var(--stone)';
-        document.getElementById('enquiryForm').reset();
-      } else {
-        triggerMailtoFallback();
-      }
-    } catch (error) {
-      triggerMailtoFallback();
-    } finally {
-      submitBtn.innerText = originalText;
-    }
-  });
-
-  // ==========================================
-  // SCROLL EFFECTS & INTERSECTION OBSERVER
-  // ==========================================
   const header = document.getElementById('siteHeader');
   window.addEventListener('scroll', () => { 
     if(header) header.classList.toggle('scrolled', window.scrollY > 40); 
@@ -1315,7 +1064,7 @@
   const revealEls = document.querySelectorAll('.reveal');
   if(revealEls.length > 0 && typeof IntersectionObserver !== 'undefined') {
     const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      entries.forEach(e => { if(e.isIntersecting) { e.target.classList.et?.add ? e.target.classList.add('in') : e.target.classList.add('in'); io.unobserve(e.target); } });
     }, {threshold:0.12});
     revealEls.forEach(el => io.observe(el));
   }

@@ -113,7 +113,6 @@
         'dispatch-plan-03.jpg',
         'dispatch-plan-04.jpg'
       ];
-      // Uses the current millisecond timestamp modulo 4 to dynamically pick a blueprint (0 to 3)
       const index = Date.now() % blueprints.length;
       document.getElementById('dynamicBlueprintImg').src = blueprints[index];
     })();
@@ -171,8 +170,15 @@
       articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
-    // Sort chronologically using ID string
-    articles.sort((a, b) => b.id.localeCompare(a.id));
+    // Robust chronological sort: newest publication date first, falling back to ID string comparison if dates are missing
+    articles.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      if (dateA !== dateB) {
+        return dateB - dateA; // Descending order (newest first)
+      }
+      return b.id.localeCompare(a.id);
+    });
 
     const container = document.getElementById('fullArchiveContainer');
     const paginationFooter = document.getElementById('paginationFooter');
