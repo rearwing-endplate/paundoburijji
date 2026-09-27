@@ -31,22 +31,6 @@
     <meta property="twitter:image:width" content="1200">
     <meta property="twitter:image:height" content="630">
 
-    <style>
-      @keyframes slotWheelSpinUp {
-        0% { transform: translateY(35px); filter: blur(8px); opacity: 0.2; }
-        60% { transform: translateY(-8px); filter: blur(2px); opacity: 0.8; }
-        85% { transform: translateY(4px); filter: blur(0.5px); opacity: 0.95; }
-        100% { transform: translateY(0); filter: blur(0px); opacity: 1; }
-      }
-      @keyframes slotWheelSpinDown {
-        0% { transform: translateY(-35px); filter: blur(8px); opacity: 0.2; }
-        60% { transform: translateY(8px); filter: blur(2px); opacity: 0.8; }
-        85% { transform: translateY(-4px); filter: blur(0.5px); opacity: 0.95; }
-        100% { transform: translateY(0); filter: blur(0px); opacity: 1; }
-      }
-      .stack-anim-up { animation: slotWheelSpinUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-      .stack-anim-down { animation: slotWheelSpinDown 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-    </style>
 </head>
 <body>
 
@@ -654,8 +638,11 @@
   let articles = [];
   let rightStackOffset = 0;
   let activeFilter = 'all';
-  let lastScrollDirection = 'down';
   const MAX_STACK_ITEMS = 5; // 1 anchored LATEST card + 4 historical stack items
+
+  // Holds the single pending scroll action (set by scrollIncitesStack, consumed
+  // by the next renderPublicArticles call) so the reel knows what it's animating.
+  let pendingStackTransition = null;
 
   async function initializeData() {
     try {
@@ -701,16 +688,62 @@
 
   window.addEventListener('DOMContentLoaded', initializeData);
 
+  // Shared background style helper (used by every incite card variant).
+  function getBgStyle(art) {
+    const img = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
+    return `background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${img}'); background-size: cover; background-position: center;`;
+  }
+
+  // Markup for one card as it sits inside the reel stack. Fixed-height (.stack-slot)
+  // so every slot in the reel is identical and the mechanical travel distance is exact.
+  function stackCardHTML(art, extraClass = '') {
+    const isSalis = art.category === 'salisminster';
+    return `
+      <article class="incite-card secondary stack-slot ${extraClass}" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
+        <div>
+          <h3>${art.title}</h3>
+          <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
+            <span class="article-tag ${isSalis ? 'salisminster' : 'burj'}">${isSalis ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  // Position + length (as %) of the white progress fill within its track, for a given offset.
+  function computeMarkerMetrics(offset, maxAvailableStack, maxOffset) {
+    const totalScrollable = Math.max(0, maxAvailableStack - 2);
+    let heightPct = 100;
+    let topPct = 0;
+    if (totalScrollable > 0) {
+      heightPct = Math.max(25, Math.min(100, (2 / totalScrollable) * 100));
+      if (maxOffset > 0) {
+        topPct = (offset / maxOffset) * (100 - heightPct);
+      }
+    }
+    return { heightPct, topPct };
+  }
+
   function scrollIncitesStack(direction) {
     const matched = articles.filter(a => activeFilter === 'all' || a.category === activeFilter);
     const maxAvailable = Math.min(matched.length, MAX_STACK_ITEMS);
     const maxOffset = Math.max(0, maxAvailable - 3);
-    
-    lastScrollDirection = direction > 0 ? 'down' : 'up';
-    rightStackOffset += direction;
-    if (rightStackOffset < 0) rightStackOffset = 0;
-    if (rightStackOffset > maxOffset) rightStackOffset = maxOffset;
 
+    const fromOffset = rightStackOffset;
+    let toOffset = fromOffset + direction;
+    if (toOffset < 0) toOffset = 0;
+    if (toOffset > maxOffset) toOffset = maxOffset;
+    if (toOffset === fromOffset) return; // already at the end of the reel, nothing to spin
+
+    pendingStackTransition = {
+      fromOffset,
+      toOffset,
+      direction: direction > 0 ? 'down' : 'up', // down = OLDER, up = NEWER
+      fromMaxAvailableStack: maxAvailable,
+      fromMaxOffset: maxOffset
+    };
+
+    rightStackOffset = toOffset;
     renderPublicArticles(activeFilter, true);
   }
 
@@ -719,9 +752,16 @@
     const container = document.getElementById('publicArticlesContainer');
     const viewAllWrap = document.getElementById('viewAllIncitesBtnWrap');
     if(!container) return;
-    
+
     const matched = articles.filter(a => filter === 'all' || a.category === filter);
     const count = matched.length;
+
+    // Consume the pending transition (if this render is the direct result of it) and
+    // clear it immediately — it's a one-shot instruction, never reused across renders.
+    const reelTransition = (animate && pendingStackTransition && pendingStackTransition.toOffset === rightStackOffset)
+      ? pendingStackTransition
+      : null;
+    pendingStackTransition = null;
 
     if(viewAllWrap) {
       viewAllWrap.style.display = count > 3 ? 'block' : 'none';
@@ -737,11 +777,6 @@
 
     const upDisabled = rightStackOffset <= 0;
     const downDisabled = count <= 3 || rightStackOffset >= maxOffset;
-
-    const getBgStyle = (art) => {
-      const img = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
-      return `background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${img}'); background-size: cover; background-position: center;`;
-    };
 
     let html = '';
 
@@ -790,24 +825,26 @@
       const isSalisFeatured = artFeatured.category === 'salisminster';
 
       const artStack1 = matched[rightStackOffset + 1];
-      const isSalis1 = artStack1.category === 'salisminster';
       const artStack2 = matched[rightStackOffset + 2];
-      const isSalis2 = artStack2.category === 'salisminster';
 
-      // Dynamic calculation for the clean white scroll marker bar height and position
-      const totalScrollable = Math.max(0, maxAvailableStack - 2); 
-      let markerHeightPct = 100;
-      let markerTopPct = 0;
+      const { heightPct: markerHeightPct, topPct: markerTopPct } = computeMarkerMetrics(rightStackOffset, maxAvailableStack, maxOffset);
 
-      if (totalScrollable > 0) {
-        markerHeightPct = Math.max(25, Math.min(100, (2 / totalScrollable) * 100));
-        if (maxOffset > 0) {
-          markerTopPct = (rightStackOffset / maxOffset) * (100 - markerHeightPct);
-        }
+      // Build the reel: 2 static slots normally, or a 3-slot strip (exiting + shared + entering)
+      // when a scroll just happened, so the real cards visibly travel past one another.
+      let reelBodyHTML;
+      if (reelTransition) {
+        const dir = reelTransition.direction;
+        const fromOff = reelTransition.fromOffset;
+        const rowArts = dir === 'down'
+          ? [matched[fromOff + 1], matched[fromOff + 2], matched[fromOff + 3]]  // exiting, shared, entering
+          : [matched[fromOff], matched[fromOff + 1], matched[fromOff + 2]];     // entering, shared, exiting
+        reelBodyHTML = rowArts.map(a => stackCardHTML(a)).join('');
+      } else {
+        reelBodyHTML = stackCardHTML(artStack1) + stackCardHTML(artStack2);
       }
 
       html = `
-        <div class="swiss-incites-grid" style="position: relative;">
+        <div class="journal-stack-grid">
           <!-- Left Featured Card (Anchored to Latest) -->
           <article class="incite-card featured" style="${getBgStyle(artFeatured)}" onclick="handleInciteInteraction('${artFeatured.id}')" ontouchend="handleMobileTap(event, '${artFeatured.id}')">
             <div>
@@ -818,51 +855,94 @@
             </div>
           </article>
 
-          <!-- Explicit White Stack Scroll Marker Bar in Gutter -->
-          <div style="position: absolute; left: calc(50% - 10px); top: 40px; bottom: 40px; width: 3px; background: rgba(255,255,255,0.1); border-radius: 3px; pointer-events: none; z-index: 5;">
-            <div style="position: absolute; left: 0; width: 100%; background: #ffffff; border-radius: 3px; height: ${markerHeightPct}%; top: ${markerTopPct}%; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 10px rgba(255,255,255,0.5);"></div>
+          <!-- Scroll-progress track, sitting in its own grid gutter so it is always
+               exactly centered in the gap between the two columns -->
+          <div class="journal-stack-gutter">
+            <div class="journal-stack-track">
+              <div class="journal-stack-fill" id="stackMarkerFill" style="height:${markerHeightPct}%; top:${markerTopPct}%;"></div>
+            </div>
           </div>
 
-          <!-- Right Column: Scrolling Slot-Reel Stack with Viewport Clipping -->
-          <div style="display: flex; flex-direction: column; position: relative;">
-            <!-- Aligned Upward Arrow -->
+          <!-- Right Column: Mechanical Slot-Reel Stack -->
+          <div class="journal-stack-col">
             <div style="text-align: center; margin-bottom: 12px;">
               <button id="stackScrollUpBtn" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" style="background: rgba(10,10,14,0.85); border: 1px solid ${upDisabled ? 'var(--line)' : 'var(--gold)'}; color: ${upDisabled ? 'var(--stone)' : 'var(--gold)'}; width: 100%; max-width: 120px; height: 28px; border-radius: 4px; cursor: ${upDisabled ? 'not-allowed' : 'pointer'}; font-family: var(--mono); font-size: 13px; transition: all 0.2s ease; opacity: ${upDisabled ? '0.2' : '1'}; pointer-events: ${upDisabled ? 'none' : 'auto'};">&uarr; NEWER</button>
             </div>
 
-            <!-- Clipped Viewport Wrapper to simulate mechanical wheel rotation -->
-            <div style="overflow: hidden; padding: 4px 0;">
-              <!-- Stacked Secondary Cards Wrapper with Slot-Reel Spin Animation -->
-              <div id="stackCardsInner" class="${animate ? (lastScrollDirection === 'up' ? 'stack-anim-down' : 'stack-anim-up') : ''}" style="display: flex; flex-direction: column; gap: 24px;">
-                <article class="incite-card secondary" style="${getBgStyle(artStack1)}" onclick="handleInciteInteraction('${artStack1.id}')" ontouchend="handleMobileTap(event, '${artStack1.id}')">
-                  <div>
-                    <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack1.title}</h3>
-                    <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                      <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-                    </div>
-                  </div>
-                </article>
-                <article class="incite-card secondary" style="${getBgStyle(artStack2)}" onclick="handleInciteInteraction('${artStack2.id}')" ontouchend="handleMobileTap(event, '${artStack2.id}')">
-                  <div>
-                    <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack2.title}</h3>
-                    <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
-                      <span class="article-tag ${isSalis2 ? 'salisminster' : 'burj'}">${isSalis2 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
-                    </div>
-                  </div>
-                </article>
+            <!-- Clipped machine window: only ever shows 2 slots, however many pass behind it -->
+            <div class="stack-reel-viewport" id="stackReelViewport">
+              <div class="stack-reel-strip" id="stackReelStrip">
+                ${reelBodyHTML}
               </div>
             </div>
 
-            <!-- Aligned Downward Arrow -->
             <div style="text-align: center; margin-top: 12px;">
               <button id="stackScrollDownBtn" onclick="scrollIncitesStack(1)" aria-label="Scroll down stack" style="background: rgba(10,10,14,0.85); border: 1px solid ${downDisabled ? 'var(--line)' : 'var(--gold)'}; color: ${downDisabled ? 'var(--stone)' : 'var(--gold)'}; width: 100%; max-width: 120px; height: 28px; border-radius: 4px; cursor: ${downDisabled ? 'not-allowed' : 'pointer'}; font-family: var(--mono); font-size: 13px; transition: all 0.2s ease; opacity: ${downDisabled ? '0.2' : '1'}; pointer-events: ${downDisabled ? 'none' : 'auto'};">&darr; OLDER</button>
             </div>
           </div>
         </div>
       `;
+
+      container.innerHTML = html;
+
+      if (reelTransition) {
+        runReelAnimation(reelTransition, artStack1, artStack2, markerHeightPct, markerTopPct);
+      }
+      return;
     }
 
     container.innerHTML = html;
+  }
+
+  // Choreographs the actual "spin". Measures the real rendered slot height, sets the
+  // strip's start/overshoot/rebound/end travel as CSS custom properties, then lets the
+  // reelSettle keyframes (styles.css) carry it through a weighted, decelerating stop.
+  function runReelAnimation(trans, finalArt1, finalArt2, markerHeightPct, markerTopPct) {
+    const viewport = document.getElementById('stackReelViewport');
+    const strip = document.getElementById('stackReelStrip');
+    const markerFill = document.getElementById('stackMarkerFill');
+    if (!viewport || !strip || strip.children.length < 3) return;
+
+    const rows = Array.from(strip.children);
+    const rowSpan = rows[1].offsetTop - rows[0].offsetTop;               // one full slot's travel distance
+    const visibleSpan = (rows[1].offsetTop + rows[1].offsetHeight) - rows[0].offsetTop; // height of 2 visible slots
+
+    // Clip the third (currently off-screen) slot behind the machine window.
+    viewport.style.height = visibleSpan + 'px';
+
+    const goingDown = trans.direction === 'down';
+    const startPx = goingDown ? 0 : -rowSpan;
+    const endPx = goingDown ? -rowSpan : 0;
+    const nudge = Math.min(18, rowSpan * 0.14) * (goingDown ? -1 : 1);
+    const settle = Math.min(6, rowSpan * 0.05) * (goingDown ? 1 : -1);
+
+    strip.style.setProperty('--reel-start', startPx + 'px');
+    strip.style.setProperty('--reel-overshoot', (endPx + nudge) + 'px');
+    strip.style.setProperty('--reel-rebound', (endPx - nudge * 0.35 + settle) + 'px');
+    strip.style.setProperty('--reel-end', endPx + 'px');
+
+    // Slide the progress marker in step with the reel, rather than snapping.
+    if (markerFill) {
+      const prev = computeMarkerMetrics(trans.fromOffset, trans.fromMaxAvailableStack, trans.fromMaxOffset);
+      markerFill.style.transition = 'none';
+      markerFill.style.top = prev.topPct + '%';
+      markerFill.style.height = prev.heightPct + '%';
+      void markerFill.offsetHeight; // force reflow so the jump above isn't animated
+      markerFill.style.transition = '';
+      requestAnimationFrame(() => {
+        markerFill.style.top = markerTopPct + '%';
+        markerFill.style.height = markerHeightPct + '%';
+      });
+    }
+
+    strip.classList.add('is-settling');
+
+    strip.addEventListener('animationend', function onDone() {
+      strip.removeEventListener('animationend', onDone);
+      // Collapse back to a plain, un-clipped 2-slot reel and fire the "you've landed" pulse.
+      viewport.style.height = '';
+      viewport.innerHTML = `<div class="stack-reel-strip" id="stackReelStrip">${stackCardHTML(finalArt1, 'stack-landed')}${stackCardHTML(finalArt2, 'stack-landed')}</div>`;
+    }, { once: true });
   }
 
   document.querySelectorAll('.filter-btn').forEach(btn => {

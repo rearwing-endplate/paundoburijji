@@ -453,6 +453,10 @@ svg[data-timescale="millennia"] .salis-stream { animation: pincerDashFlow 1.2s l
   min-height: 185px;
 }
 
+.incite-card.secondary h3 {
+  font-size: clamp(18px, 1.8vw, 22px);
+}
+
 .incite-card.full-width {
   width: 100%;
   min-height: 260px;
@@ -479,6 +483,108 @@ svg[data-timescale="millennia"] .salis-stream { animation: pincerDashFlow 1.2s l
 
 .article-tag.salisminster { color: var(--gold); }
 .article-tag.burj { color: var(--steel); }
+
+/* ---------- SECTION 05: MECHANICAL SLOT-REEL WINDOW STACK (3+ windows) ---------- */
+
+/* Featured card + a dedicated 28px gutter column + the reel column. The gutter is a
+   real grid track (not a 50%-of-container guess), so the progress bar it holds always
+   lands exactly between the two panels, at any column ratio or viewport width. */
+.journal-stack-grid {
+  display: grid;
+  grid-template-columns: 1.85fr 28px 1fr;
+  column-gap: 0;
+  row-gap: 0;
+  width: 100%;
+}
+@media (max-width: 1024px) {
+  .journal-stack-grid { grid-template-columns: 1fr; row-gap: 28px; }
+  .journal-stack-gutter { display: none; }
+}
+
+.journal-stack-gutter { position: relative; }
+.journal-stack-track {
+  position: absolute;
+  top: 40px; bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.journal-stack-fill {
+  position: absolute;
+  left: 0; width: 100%;
+  background: #ffffff;
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.journal-stack-col { display: flex; flex-direction: column; position: relative; }
+
+/* The "machine window" the reel spins behind: a recessed housing with the two slots
+   fading into shadow at each edge, like they're emerging from / receding into the drum. */
+.stack-reel-viewport {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  box-shadow: inset 0 10px 14px -10px rgba(0, 0, 0, 0.85), inset 0 -10px 14px -10px rgba(0, 0, 0, 0.85);
+}
+.stack-reel-viewport::before,
+.stack-reel-viewport::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 30px;
+  pointer-events: none;
+  z-index: 3;
+}
+.stack-reel-viewport::before { top: 0; background: linear-gradient(to bottom, var(--obsidian) 0%, transparent 100%); }
+.stack-reel-viewport::after { bottom: 0; background: linear-gradient(to top, var(--obsidian) 0%, transparent 100%); }
+
+.stack-reel-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 4px 0;
+}
+
+/* Fixed-height slots (rather than min-height) so every card in the reel is identical
+   and the mechanical travel distance between slots is exact, not a content-dependent guess. */
+.stack-slot { height: 185px; }
+.stack-slot h3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Fast spin blur that clears as the reel decelerates, an overshoot-then-rebound
+   settle for mechanical weight, and NO opacity change — real objects don't fade,
+   they just go soft with motion and sharpen again once they stop. */
+.stack-reel-strip.is-settling {
+  animation: reelSettle 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes reelSettle {
+  0%   { transform: translateY(var(--reel-start)); filter: blur(0px); }
+  10%  { filter: blur(5px); }
+  40%  { filter: blur(10px); }
+  66%  { transform: translateY(var(--reel-overshoot)); filter: blur(3px); }
+  84%  { transform: translateY(var(--reel-rebound)); filter: blur(0.6px); }
+  100% { transform: translateY(var(--reel-end)); filter: blur(0px); }
+}
+
+/* The "you've won" flash when a slot locks into place after a spin. */
+.stack-slot.stack-landed {
+  animation: stackWinPulse 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes stackWinPulse {
+  0%   { box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 0 rgba(200, 163, 94, 0); border-color: rgba(255, 255, 255, 0.14); }
+  40%  { box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 28px 3px rgba(200, 163, 94, 0.6); border-color: var(--gold); }
+  100% { box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 0 rgba(200, 163, 94, 0); border-color: rgba(255, 255, 255, 0.14); }
+}
 
 pre.quant-code { background: #0d0d10; border: 1px solid var(--line-strong); border-left: 3px solid var(--steel); padding: 22px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.65; color: var(--stone); margin: 24px 0; }
 
