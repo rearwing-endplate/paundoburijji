@@ -6,6 +6,47 @@
 <title>Data &amp; Intelligence Stack — Poundbridge</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="styles.css">
+<style>
+  /* Wrapper that stretches dynamically based on the number of loaded incites */
+  .archive-content-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+    padding: 24px 0; /* Breathing room so the blueprint shows above/below the cards */
+  }
+
+  /* The dynamic architectural blueprint background */
+  .blueprint-underlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none; /* Allows clicks to pass through to the cards */
+    opacity: 0.9;
+  }
+
+  .blueprint-underlay img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top right; /* Anchors the architectural focal point to the right */
+    
+    /* The Trading Fade: Solid on the right (0%), fading to transparent on the left (90%) */
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0) 90%);
+    mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0) 90%);
+  }
+
+  /* Keep the cards above the blueprint */
+  #fullArchiveContainer {
+    position: relative;
+    z-index: 1;
+  }
+
+  .limit-btn { background: transparent; border: 1px solid var(--line); color: var(--stone-dim); padding: 4px 10px; cursor: pointer; font-family: var(--mono); font-size: 11px; transition: all 0.2s ease; }
+  .limit-btn.active, .limit-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(200,163,94,0.06); }
+  .page-num-btn { background: transparent; border: 1px solid var(--line); color: var(--stone-dim); padding: 6px 12px; cursor: pointer; font-family: var(--mono); font-size: 11px; transition: all 0.2s ease; border-radius: 4px; }
+  .page-num-btn.active, .page-num-btn:hover:not(.disabled) { border-color: var(--gold); color: var(--gold); background: rgba(200,163,94,0.06); }
+  .page-num-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+</style>
 </head>
 <body>
 
@@ -31,12 +72,12 @@
   </nav>
 </header>
 
-<main style="padding: 160px 24px 120px; max-width: 1000px; margin: 0 auto;">
+<main style="padding: 140px 24px 120px; max-width: 1000px; margin: 0 auto;">
   <div class="swiss-num">[ ARCHIVAL REPOSITORY ]</div>
   <div class="eyebrow" style="margin-bottom: 8px;">Temple Incites Archive</div>
   <h1 style="font-family: var(--display); font-size: clamp(32px, 4.5vw, 54px); font-weight: 400; line-height: 1.15; margin-bottom: 30px; color: #ffffff;">Data &amp; Intelligence Stack</h1>
 
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 40px; border-bottom: 1px solid var(--line); padding-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 24px;">
     <div class="journal-filters" style="margin: 0;">
       <button class="filter-btn active" data-filter="all" onclick="setArchiveFilter('all')">All Incites</button>
       <button class="filter-btn" data-filter="salisminster" onclick="setArchiveFilter('salisminster')">Salisminster</button>
@@ -51,9 +92,17 @@
     </div>
   </div>
 
-  <div id="fullArchiveContainer" style="display: flex; flex-direction: column; gap: 24px;"></div>
+  <!-- DYNAMIC RANDOMLY SELECTED ARCHITECTURAL BLUEPRINT (FADING RIGHT TO LEFT) -->
+  <div class="archive-content-wrapper">
+    <div class="blueprint-underlay">
+      <img id="dynamicBlueprintImg" src="" alt="Zaha Hadid architectural line drawing blueprint">
+    </div>
 
-  <div id="paginationFooter" style="display: flex; justify-content: space-between; align-items: center; margin-top: 50px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--stone-dim);"></div>
+    <!-- The list of incites sits on top of the underlay -->
+    <div id="fullArchiveContainer" style="display: flex; flex-direction: column; gap: 24px;"></div>
+  </div>
+
+  <div id="paginationFooter" style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--stone-dim);"></div>
 </main>
 
 <footer>
@@ -71,6 +120,26 @@
 </footer>
 
 <script>
+  // ==========================================
+  // IN-HOUSE RANDOMNESS GENERATOR (TIMESTAMP BASED)
+  // ==========================================
+  function selectRandomBlueprint() {
+    const blueprints = [
+      'dispatch-plan-01.jpg',
+      'dispatch-plan-02.jpg',
+      'dispatch-plan-03.jpg',
+      'dispatch-plan-04.jpg'
+    ];
+    // Uses the current millisecond timestamp modulo 4 to pick an index (0 to 3)
+    const index = Date.now() % blueprints.length;
+    const selectedImg = blueprints[index];
+    
+    const imgEl = document.getElementById('dynamicBlueprintImg');
+    if (imgEl) {
+      imgEl.src = selectedImg;
+    }
+  }
+
   let currentFilter = 'all';
   let currentLimit = 10;
   let currentPage = 1;
@@ -97,6 +166,7 @@
       articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
+    // Sort chronologically using ID string
     articles.sort((a, b) => b.id.localeCompare(a.id));
 
     const container = document.getElementById('fullArchiveContainer');
@@ -177,17 +247,10 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const styleTag = document.createElement('style');
-  styleTag.innerHTML = `
-    .limit-btn { background: transparent; border: 1px solid var(--line); color: var(--stone-dim); padding: 4px 10px; cursor: pointer; font-family: var(--mono); font-size: 11px; transition: all 0.2s ease; }
-    .limit-btn.active, .limit-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(200,163,94,0.06); }
-    .page-num-btn { background: transparent; border: 1px solid var(--line); color: var(--stone-dim); padding: 6px 12px; cursor: pointer; font-family: var(--mono); font-size: 11px; transition: all 0.2s ease; border-radius: 4px; }
-    .page-num-btn.active, .page-num-btn:hover:not(.disabled) { border-color: var(--gold); color: var(--gold); background: rgba(200,163,94,0.06); }
-    .page-num-btn.disabled { opacity: 0.3; cursor: not-allowed; }
-  `;
-  document.head.appendChild(styleTag);
-
-  window.addEventListener('DOMContentLoaded', () => loadArchiveArticles());
+  window.addEventListener('DOMContentLoaded', () => {
+    selectRandomBlueprint();
+    loadArchiveArticles();
+  });
 
   const header = document.getElementById('siteHeader');
   window.addEventListener('scroll', () => { header.classList.toggle('scrolled', window.scrollY > 40); }, {passive:true});
