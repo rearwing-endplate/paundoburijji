@@ -47,11 +47,8 @@ jobs:
             const title = parsed.data.title || "Untitled";
             const category = parsed.data.category || "salisminster";
             
-            // Map background asset: Salisminster always uses ustreasury.jpg; Burj uses chosen bgImage or defaults to yennote.jpg
-            let bgImage = "ustreasury.jpg";
-            if (category === "burj") {
-              bgImage = parsed.data.bgImage || "yennote.jpg";
-            }
+            // Fallback gracefully if bgImage isn''t set
+            let bgImage = parsed.data.bgImage || (category === "salisminster" ? "ustreasury.jpg" : "yennote.jpg");
 
             const htmlContent = marked.parse(parsed.content);
 
@@ -73,4 +70,4 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add articles.json
-          git diff --staged --quiet || (git commit -m "Auto-compile articles.json with 1+3 background asset mapping" && git push)
+          git diff --staged --quiet || (git commit -m "Auto-compile articles.json with explicit 4-option bgImage mapping" && git push)
