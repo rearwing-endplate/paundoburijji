@@ -42,10 +42,16 @@ jobs:
             const filePath = path.join(dir, file);
             const fileContent = fs.readFileSync(filePath, "utf8");
             const parsed = matter(fileContent);
-            
+
             const id = parsed.data.id || path.basename(file, path.extname(file));
             const title = parsed.data.title || "Untitled";
-            
+
+            // Publication date straight from CMS front matter. This is the single
+            // source of truth for chronological order on both index.html and
+            // dispatches.html, so it must always be carried through here.
+            const rawDate = parsed.data.date || null;
+            const date = rawDate ? new Date(rawDate).toISOString() : null;
+
             // Automatically infer category and bgImage from the unified plate selection
             const bgImage = parsed.data.bgImage || "ustreasury.jpg";
             const category = (bgImage === "ustreasury.jpg") ? "salisminster" : "burj";
@@ -57,8 +63,18 @@ jobs:
               title: title,
               category: category,
               bgImage: bgImage,
+              date: date,
               content: htmlContent
             });
+          });
+
+          // Sort newest-first here too, so articles.json itself is already in the
+          // right order (the front-end re-sorts defensively, but this keeps the
+          // raw JSON meaningful on its own and keeps the two sources of truth aligned).
+          articles.sort((a, b) => {
+            const ta = a.date ? new Date(a.date).getTime() : 0;
+            const tb = b.date ? new Date(b.date).getTime() : 0;
+            return tb - ta;
           });
 
           fs.writeFileSync("articles.json", JSON.stringify(articles, null, 2));
