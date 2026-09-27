@@ -170,14 +170,21 @@
       articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
-    // Robust chronological sort: newest publication date first, falling back to ID string comparison if dates are missing
+    // Bulletproof chronological sort matching index.html
     articles.sort((a, b) => {
-      const dateA = a.date ? new Date(a.date).getTime() : 0;
-      const dateB = b.date ? new Date(b.date).getTime() : 0;
-      if (dateA !== dateB) {
-        return dateB - dateA; // Descending order (newest first)
+      const parseTime = (val) => {
+        if (!val) return 0;
+        const t = new Date(val).getTime();
+        return isNaN(t) ? 0 : t;
+      };
+      
+      const timeA = parseTime(a.date);
+      const timeB = parseTime(b.date);
+      
+      if (timeA !== timeB) {
+        return timeB - timeA; // Descending order (newest first)
       }
-      return b.id.localeCompare(a.id);
+      return String(b.id || '').localeCompare(String(a.id || ''));
     });
 
     const container = document.getElementById('fullArchiveContainer');

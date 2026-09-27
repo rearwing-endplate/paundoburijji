@@ -655,14 +655,23 @@
       articles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
-    // Robust chronological sort: newest publication date first, falling back to ID string comparison
+    // Bulletproof chronological sorting that handles CMS dates, numeric timestamps, and fallback strings
     articles.sort((a, b) => {
-      const dateA = a.date ? new Date(a.date).getTime() : 0;
-      const dateB = b.date ? new Date(b.date).getTime() : 0;
-      if (dateA !== dateB) {
-        return dateB - dateA;
+      const parseTime = (val) => {
+        if (!val) return 0;
+        const t = new Date(val).getTime();
+        return isNaN(t) ? 0 : t;
+      };
+      
+      const timeA = parseTime(a.date);
+      const timeB = parseTime(b.date);
+      
+      if (timeA !== timeB) {
+        return timeB - timeA; // Newest first
       }
-      return b.id.localeCompare(a.id);
+      
+      // Fallback: compare ID strings or numeric suffixes if dates match or are absent
+      return String(b.id || '').localeCompare(String(a.id || ''));
     });
 
     renderPublicArticles();
@@ -1064,7 +1073,7 @@
   const revealEls = document.querySelectorAll('.reveal');
   if(revealEls.length > 0 && typeof IntersectionObserver !== 'undefined') {
     const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if(e.isIntersecting) { e.target.classList.et?.add ? e.target.classList.add('in') : e.target.classList.add('in'); io.unobserve(e.target); } });
+      entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
     }, {threshold:0.12});
     revealEls.forEach(el => io.observe(el));
   }
