@@ -11,11 +11,6 @@ content:
       - name: title
         label: Title
         type: string
-      - name: category
-        label: Category
-        type: select
-        options:
-          values: [salisminster, burj]
       - name: bgImage
         label: Visual Plate Asset
         type: select
@@ -29,10 +24,6 @@ content:
               value: "alexanderhamilton.jpg"
             - label: "Burj - Euro Plate"
               value: "euro.jpg"
-      - name: image
-        label: Cover Image
-        type: image
-        required: false
       - name: date
         label: Publication Date
         type: date
