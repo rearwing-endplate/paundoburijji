@@ -26,5 +26,12 @@
     "category": "burj",
     "bgImage": "alexanderhamilton.jpg",
     "content": "<p>1212</p>\n"
+  },
+  {
+    "id": "2026-09-27-test-006",
+    "title": "Test 006",
+    "category": "burj",
+    "bgImage": "euro.jpg",
+    "content": "<p>Euro dollar parity test</p>\n"
   }
 ]
