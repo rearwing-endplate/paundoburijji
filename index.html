@@ -32,16 +32,16 @@
     <meta property="twitter:image:height" content="630">
 
     <style>
-      @keyframes luxeElevatorUp {
-        0% { opacity: 0.1; transform: translateY(18px); }
-        100% { opacity: 1; transform: translateY(0); }
+      @keyframes luxeMotionBlurUp {
+        0% { opacity: 0.15; transform: translateY(22px); filter: blur(5px); }
+        100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
       }
-      @keyframes luxeElevatorDown {
-        0% { opacity: 0.1; transform: translateY(-18px); }
-        100% { opacity: 1; transform: translateY(0); }
+      @keyframes luxeMotionBlurDown {
+        0% { opacity: 0.15; transform: translateY(-22px); filter: blur(5px); }
+        100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
       }
-      .stack-anim-up { animation: luxeElevatorUp 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      .stack-anim-down { animation: luxeElevatorDown 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .stack-anim-up { animation: luxeMotionBlurUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .stack-anim-down { animation: luxeMotionBlurDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
 <body>
@@ -529,10 +529,12 @@
             <input type="text" id="artTitle" class="form-control" required placeholder="Enter title...">
           </div>
           <div class="form-group" style="margin-bottom:18px;">
-            <label class="field-label-luxe"><span class="field-idx">[ 02 ]</span> Desk Tenet</label>
-            <select id="artCategory" class="form-control select-luxe">
-              <option value="salisminster">Salisminster</option>
-              <option value="burj">Burj Al-Jabr</option>
+            <label class="field-label-luxe"><span class="field-idx">[ 02 ]</span> Visual Plate Asset</label>
+            <select id="artBgImage" class="form-control select-luxe">
+              <option value="ustreasury.jpg">Salisminster (US Treasury)</option>
+              <option value="yennote.jpg">Burj - Yen Plate</option>
+              <option value="alexanderhamilton.jpg">Burj - Alexander Plate</option>
+              <option value="euro.jpg">Burj - Euro Plate</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:18px;">
@@ -643,10 +645,10 @@
   }
 
   // ==========================================
-  // DATA PIPELINE & INTUITIVE SECTION 05 STACK
+  // DATA PIPELINE & ANCHORED SECTION 05 STACK
   // ==========================================
   let articles = [];
-  let currentStackIndex = 0;
+  let rightStackOffset = 0;
   let activeFilter = 'all';
   let lastScrollDirection = 'down';
   const MAX_STACK_ITEMS = 5;
@@ -697,12 +699,12 @@
 
   function scrollIncitesStack(direction) {
     const matched = articles.filter(a => activeFilter === 'all' || a.category === activeFilter);
-    const maxIndex = Math.min(matched.length - 3, MAX_STACK_ITEMS - 3);
+    const maxOffset = Math.max(0, Math.min(matched.length - 3, MAX_STACK_ITEMS - 3));
     
     lastScrollDirection = direction > 0 ? 'down' : 'up';
-    currentStackIndex += direction;
-    if (currentStackIndex < 0) currentStackIndex = 0;
-    if (currentStackIndex > maxIndex) currentStackIndex = maxIndex;
+    rightStackOffset += direction;
+    if (rightStackOffset < 0) rightStackOffset = 0;
+    if (rightStackOffset > maxOffset) rightStackOffset = maxOffset;
 
     renderPublicArticles(activeFilter, true);
   }
@@ -725,12 +727,11 @@
       return;
     }
 
-    const displayList = matched.slice(currentStackIndex, currentStackIndex + 3);
     const maxAvailableStack = Math.min(count, MAX_STACK_ITEMS);
-    const maxIndex = Math.max(0, maxAvailableStack - 3);
+    const maxOffset = Math.max(0, maxAvailableStack - 3);
 
-    const upDisabled = currentStackIndex <= 0;
-    const downDisabled = count <= 3 || currentStackIndex >= maxIndex;
+    const upDisabled = rightStackOffset <= 0;
+    const downDisabled = count <= 3 || rightStackOffset >= maxOffset;
 
     const getBgStyle = (art) => {
       const img = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
@@ -739,23 +740,23 @@
 
     let html = '';
 
-    if(displayList.length === 1) {
-      const art = displayList[0];
-      const isSalis = art.category === 'salisminster';
+    if(count === 1) {
+      const art0 = matched[0];
+      const isSalis0 = art0.category === 'salisminster';
       html = `
-        <article class="incite-card full-width" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
+        <article class="incite-card full-width" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
           <div>
-            <h3>${art.title}</h3>
+            <h3>${art0.title}</h3>
             <div class="swiss-num" style="margin-top: 14px; margin-bottom: 0;">
-              <span class="article-tag ${isSalis ? 'salisminster' : 'burj'}">${isSalis ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+              <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
             </div>
           </div>
         </article>
       `;
-    } else if(displayList.length === 2) {
-      const art0 = displayList[0];
+    } else if(count === 2) {
+      const art0 = matched[0];
       const isSalis0 = art0.category === 'salisminster';
-      const art1 = displayList[1];
+      const art1 = matched[1];
       const isSalis1 = art1.category === 'salisminster';
       html = `
         <div class="swiss-incites-grid">
@@ -780,45 +781,48 @@
         </div>
       `;
     } else {
-      const art0 = displayList[0];
-      const isSalis0 = art0.category === 'salisminster';
-      const art1 = displayList[1];
-      const isSalis1 = art1.category === 'salisminster';
-      const art2 = displayList[2];
-      const isSalis2 = art2.category === 'salisminster';
+      // Left Featured Card is permanently anchored to the absolute latest article (matched[0])
+      const artFeatured = matched[0];
+      const isSalisFeatured = artFeatured.category === 'salisminster';
+
+      // Right stack scrolls through the remaining articles based on rightStackOffset
+      const artStack1 = matched[rightStackOffset + 1];
+      const isSalis1 = artStack1.category === 'salisminster';
+      const artStack2 = matched[rightStackOffset + 2];
+      const isSalis2 = artStack2.category === 'salisminster';
 
       html = `
         <div class="swiss-incites-grid">
-          <!-- Left Featured Card -->
-          <article class="incite-card featured" style="${getBgStyle(art0)}" onclick="handleInciteInteraction('${art0.id}')" ontouchend="handleMobileTap(event, '${art0.id}')">
+          <!-- Left Featured Card (Anchored to Latest) -->
+          <article class="incite-card featured" style="${getBgStyle(artFeatured)}" onclick="handleInciteInteraction('${artFeatured.id}')" ontouchend="handleMobileTap(event, '${artFeatured.id}')">
             <div>
-              <h3>${art0.title}</h3>
+              <h3>${artFeatured.title}</h3>
               <div class="swiss-num" style="margin-top: 16px; margin-bottom: 0;">
-                <span class="article-tag ${isSalis0 ? 'salisminster' : 'burj'}">${isSalis0 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
+                <span class="article-tag ${isSalisFeatured ? 'salisminster' : 'burj'}">${isSalisFeatured ? 'Salisminster' : 'Burj Al-Jabr'}</span>
               </div>
             </div>
           </article>
 
-          <!-- Right Column: Stacked Cards Aligned with Elevator Arrows -->
+          <!-- Right Column: Scrolling Stack with Perceptible Motion-Blur Elevator Animation -->
           <div style="display: flex; flex-direction: column; position: relative;">
             <!-- Aligned Upward Arrow -->
             <div style="text-align: center; margin-bottom: 12px;">
               <button id="stackScrollUpBtn" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" style="background: rgba(10,10,14,0.85); border: 1px solid ${upDisabled ? 'var(--line)' : 'var(--gold)'}; color: ${upDisabled ? 'var(--stone)' : 'var(--gold)'}; width: 100%; max-width: 120px; height: 28px; border-radius: 4px; cursor: ${upDisabled ? 'not-allowed' : 'pointer'}; font-family: var(--mono); font-size: 13px; transition: all 0.2s ease; opacity: ${upDisabled ? '0.2' : '1'}; pointer-events: ${upDisabled ? 'none' : 'auto'};">&uarr; NEWER</button>
             </div>
 
-            <!-- Stacked Secondary Cards Wrapper -->
+            <!-- Stacked Secondary Cards Wrapper with Motion Blur Animation -->
             <div id="stackCardsInner" class="${animate ? (lastScrollDirection === 'up' ? 'stack-anim-down' : 'stack-anim-up') : ''}" style="display: flex; flex-direction: column; gap: 24px;">
-              <article class="incite-card secondary" style="${getBgStyle(art1)}" onclick="handleInciteInteraction('${art1.id}')" ontouchend="handleMobileTap(event, '${art1.id}')">
+              <article class="incite-card secondary" style="${getBgStyle(artStack1)}" onclick="handleInciteInteraction('${artStack1.id}')" ontouchend="handleMobileTap(event, '${artStack1.id}')">
                 <div>
-                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art1.title}</h3>
+                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack1.title}</h3>
                   <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
                     <span class="article-tag ${isSalis1 ? 'salisminster' : 'burj'}">${isSalis1 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
                   </div>
                 </div>
               </article>
-              <article class="incite-card secondary" style="${getBgStyle(art2)}" onclick="handleInciteInteraction('${art2.id}')" ontouchend="handleMobileTap(event, '${art2.id}')">
+              <article class="incite-card secondary" style="${getBgStyle(artStack2)}" onclick="handleInciteInteraction('${artStack2.id}')" ontouchend="handleMobileTap(event, '${artStack2.id}')">
                 <div>
-                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art2.title}</h3>
+                  <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${artStack2.title}</h3>
                   <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
                     <span class="article-tag ${isSalis2 ? 'salisminster' : 'burj'}">${isSalis2 ? 'Salisminster' : 'Burj Al-Jabr'}</span>
                   </div>
@@ -842,7 +846,7 @@
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
-      currentStackIndex = 0; // Reset stack window on filter switch
+      rightStackOffset = 0; // Reset right stack on filter switch
       renderPublicArticles(e.target.getAttribute('data-filter'));
     });
   });
@@ -986,6 +990,7 @@
     document.getElementById('editorTitleMode').innerText = 'Draft New Incite';
     document.getElementById('editArticleId').value = '';
     document.getElementById('artTitle').value = '';
+    document.getElementById('artBgImage').value = 'ustreasury.jpg';
     document.getElementById('artContent').value = '';
     document.getElementById('articleEditorBox').style.display = 'block';
     resetInactivityTimer();
@@ -1000,14 +1005,15 @@
     e.preventDefault();
     const idField = document.getElementById('editArticleId').value;
     const title = document.getElementById('artTitle').value;
-    const category = document.getElementById('artCategory').value;
+    const bgImage = document.getElementById('artBgImage').value;
+    const category = (bgImage === 'ustreasury.jpg') ? 'salisminster' : 'burj';
     const content = document.getElementById('artContent').value;
 
     if(idField) {
       const art = articles.find(a => a.id === idField);
-      if(art) { art.title = title; art.category = category; art.content = content; }
+      if(art) { art.title = title; art.bgImage = bgImage; art.category = category; art.content = content; }
     } else {
-      articles.unshift({ id: 'art_' + Date.now(), title, category, content });
+      articles.unshift({ id: 'art_' + Date.now(), title, category, bgImage, content });
     }
 
     saveArticlesToStorage();
@@ -1021,7 +1027,7 @@
     document.getElementById('editorTitleMode').innerText = 'Edit Incite';
     document.getElementById('editArticleId').value = art.id;
     document.getElementById('artTitle').value = art.title;
-    document.getElementById('artCategory').value = art.category;
+    document.getElementById('artBgImage').value = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
     document.getElementById('artContent').value = art.content;
     document.getElementById('articleEditorBox').style.display = 'block';
     resetInactivityTimer();
