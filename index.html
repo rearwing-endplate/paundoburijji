@@ -733,8 +733,10 @@
     const travel = toY - fromY;
     const travelDir = travel < 0 ? -1 : 1;
     const overshoot = 3.2 * travelDir;
-    const travelDuration = 1180;
-    const settleDuration = 150;
+    //const travelDuration = 1180;
+    const travelDuration = 610;
+    //const settleDuration = 150;
+    const settleDuration = 55;
 
     track.classList.add('is-spinning');
     track.style.transition = 'none';
