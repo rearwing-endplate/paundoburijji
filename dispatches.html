@@ -6,6 +6,10 @@
 <title>Data &amp; Intelligence Stack — Poundbridge</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="styles.css">
+
+<!-- PERFORMANCE: Preload the dynamically selected blueprint to eliminate layout/load delay -->
+<link rel="preload" as="image" id="blueprintPreload" href="dispatch-plan-01.jpg" fetchpriority="high">
+
 <style>
   /* Full-bleed wrapper for the edge-to-edge background */
   .archive-full-bleed {
@@ -13,7 +17,7 @@
     width: 100%;
     min-height: 400px;
     padding: 24px 0;
-    overflow: hidden; /* Prevents any accidental horizontal scrolling */
+    overflow: hidden;
   }
 
   /* The dynamic architectural blueprint background spanning full width */
@@ -21,22 +25,19 @@
     position: absolute;
     inset: 0;
     z-index: 0;
-    pointer-events: none; /* Allows clicks to pass through to the cards */
+    pointer-events: none;
   }
 
   .blueprint-underlay img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: right center; /* Anchors the architectural focal point to the far right */
-    
-    /* The Trading Fade: Solid on the right edge (0%), fading smoothly to pure blackness on the left (85%) */
+    object-position: right center;
     -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 85%);
     mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 85%);
-    opacity: 0.85; /* Softened slightly so it doesn't overpower the cards */
+    opacity: 0.85;
   }
 
-  /* Inner container keeping the cards neatly aligned to 1000px */
   .archive-constrained {
     position: relative;
     z-index: 1;
@@ -51,6 +52,26 @@
   .page-num-btn.active, .page-num-btn:hover:not(.disabled) { border-color: var(--gold); color: var(--gold); background: rgba(200,163,94,0.06); }
   .page-num-btn.disabled { opacity: 0.3; cursor: not-allowed; }
 </style>
+
+<!-- Synchronous Blueprint Selector & Preloader Sync -->
+<script>
+  (function() {
+    const blueprints = [
+      'dispatch-plan-01.jpg',
+      'dispatch-plan-02.jpg',
+      'dispatch-plan-03.jpg',
+      'dispatch-plan-04.jpg'
+    ];
+    const selectedBlueprint = blueprints[Date.now() % blueprints.length];
+    
+    // Dynamically update the preload link href to match the chosen blueprint
+    const preloadLink = document.getElementById('blueprintPreload');
+    if (preloadLink) preloadLink.href = selectedBlueprint;
+    
+    // Store globally so the img tag picks it up instantly
+    window.__selectedBlueprint = selectedBlueprint;
+  })();
+</script>
 </head>
 <body>
 
@@ -76,7 +97,6 @@
   </nav>
 </header>
 
-<!-- Header & Filters locked to 1000px -->
 <main style="padding: 140px 24px 0; max-width: 1000px; margin: 0 auto;">
   <div class="swiss-num">[ ARCHIVAL REPOSITORY ]</div>
   <div class="eyebrow" style="margin-bottom: 8px;">Temple Incites Archive</div>
@@ -101,24 +121,14 @@
 <!-- Edge-to-Edge Dynamic Blueprint Container -->
 <section class="archive-full-bleed">
   <div class="blueprint-underlay">
-    <img id="dynamicBlueprintImg" src="" alt="Zaha Hadid architectural line drawing blueprint">
+    <img id="dynamicBlueprintImg" src="" alt="Zaha Hadid architectural line drawing blueprint" fetchpriority="high" decoding="async">
   </div>
 
-  <!-- Synchronous Image Injection to prevent load flash -->
   <script>
-    (function() {
-      const blueprints = [
-        'dispatch-plan-01.jpg',
-        'dispatch-plan-02.jpg',
-        'dispatch-plan-03.jpg',
-        'dispatch-plan-04.jpg'
-      ];
-      const index = Date.now() % blueprints.length;
-      document.getElementById('dynamicBlueprintImg').src = blueprints[index];
-    })();
+    // Inject the pre-calculated blueprint path immediately into the img source
+    document.getElementById('dynamicBlueprintImg').src = window.__selectedBlueprint;
   </script>
 
-  <!-- Cards container locked back to 1000px center -->
   <div class="archive-constrained">
     <div id="fullArchiveContainer" style="display: flex; flex-direction: column; gap: 24px;"></div>
   </div>
@@ -170,10 +180,8 @@
       rawArticles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
-    // Attach original array index (_originalIndex) for CMS append order fallback
     const articles = rawArticles.map((art, idx) => ({ ...art, _originalIndex: idx }));
 
-    // Bulletproof chronological sort matching index.html
     articles.sort((a, b) => {
       const parseTime = (val) => {
         if (!val) return 0;
@@ -185,7 +193,7 @@
       const timeB = parseTime(b.date);
       
       if (timeA !== timeB) {
-        return timeB - timeA; // Descending order (newest first)
+        return timeB - timeA;
       }
       return b._originalIndex - a._originalIndex;
     });
