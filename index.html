@@ -633,6 +633,114 @@
   }
 
   // ==========================================
+  // COMMS SECTION: DESK CONTROLLER & MORPH ENGINE
+  // ==========================================
+  let currentDeskCategory = 'general';
+  let deskMorphTimer = null;
+  
+  function switchDesk(category) {
+    if (category === currentDeskCategory) return;
+    currentDeskCategory = category;
+  
+    // Clear any active transition timer to handle rapid clicks cleanly
+    if (deskMorphTimer) {
+      clearTimeout(deskMorphTimer);
+      deskMorphTimer = null;
+    }
+  
+    const commsCard = document.getElementById('commsCard');
+    const segControl = document.getElementById('deskSegmentedControl');
+    const tabs = document.querySelectorAll('.apple-segmented-control .enq-tab');
+    const enqCategoryInput = document.getElementById('enqCategory');
+  
+    // 1. Sync hidden form input
+    if (enqCategoryInput) enqCategoryInput.value = category;
+  
+    // 2. Update active pill tab state
+    tabs.forEach(tab => {
+      tab.classList.toggle('active', tab.getAttribute('data-category') === category);
+    });
+  
+    // 3. Trigger segmented pill slide & card warmth glow via CSS classes
+    if (category === 'mql5_quant') {
+      if (segControl) segControl.classList.add('burj-active');
+      if (commsCard) commsCard.classList.add('burj-warmth');
+    } else {
+      if (segControl) segControl.classList.remove('burj-active');
+      if (commsCard) commsCard.classList.remove('burj-warmth');
+    }
+  
+    // 4. Glassmorphic Dissolve & Bloom (Two-Phase Morph)
+    const descGen = document.getElementById('enqDescGeneral');
+    const descBurj = document.getElementById('enqDescMql5_quant');
+    const fieldsGen = document.querySelector('.enq-fields[data-fields-for="general"]');
+    const fieldsBurj = document.querySelector('.enq-fields[data-fields-for="mql5_quant"]');
+  
+    const outgoingDesc = category === 'mql5_quant' ? descGen : descBurj;
+    const incomingDesc = category === 'mql5_quant' ? descBurj : descGen;
+    const outgoingFields = category === 'mql5_quant' ? fieldsGen : fieldsBurj;
+    const incomingFields = category === 'mql5_quant' ? fieldsBurj : fieldsGen;
+  
+    // Phase A: Morph out (Gaussian blur to 8px, fade, slight translateY)
+    if (outgoingDesc) {
+      outgoingDesc.classList.remove('morph-in');
+      outgoingDesc.classList.add('morph-out');
+    }
+    if (outgoingFields) {
+      outgoingFields.classList.remove('morph-in');
+      outgoingFields.classList.add('morph-out');
+    }
+  
+    // Phase B: Swap visibility and morph in (Bloom to 0px blur and 100% opacity)
+    deskMorphTimer = setTimeout(() => {
+      if (outgoingDesc) {
+        outgoingDesc.style.display = 'none';
+        outgoingDesc.classList.remove('morph-out');
+      }
+      if (outgoingFields) {
+        outgoingFields.style.display = 'none';
+        outgoingFields.classList.remove('morph-out');
+      }
+  
+      if (incomingDesc) {
+        incomingDesc.style.display = 'block';
+        incomingDesc.classList.remove('morph-in');
+        incomingDesc.classList.add('morph-out');
+        void incomingDesc.offsetWidth; // Force layout reflow so transition starts from blur
+        incomingDesc.classList.remove('morph-out');
+        incomingDesc.classList.add('morph-in');
+      }
+  
+      if (incomingFields) {
+        incomingFields.style.display = 'block';
+        incomingFields.classList.remove('morph-in');
+        incomingFields.classList.add('morph-out');
+        void incomingFields.offsetWidth; // Force layout reflow
+        incomingFields.classList.remove('morph-out');
+        incomingFields.classList.add('morph-in');
+      }
+    }, 180);
+  }
+  
+  // Wire up the Genesis Enquiry Form submit handler
+  const enquiryForm = document.getElementById('enquiryForm');
+  if (enquiryForm) {
+    enquiryForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const successMsg = document.getElementById('enqSuccess');
+      if (successMsg) {
+        successMsg.style.display = 'block';
+        setTimeout(() => {
+          successMsg.style.display = 'none';
+        }, 5000);
+      }
+      enquiryForm.reset();
+      const enqCat = document.getElementById('enqCategory');
+      if (enqCat) enqCat.value = currentDeskCategory;
+    });
+  }
+  
+  // ==========================================
   // DATA PIPELINE & ANCHORED SECTION 05 STACK
   // ==========================================
   let articles = [];
