@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-09-28-i-write-what-i-like",
+    "title": "I Write What I Like",
+    "category": "burj",
+    "bgImage": "paulkruger.jpg",
+    "date": "2026-09-28T21:58:00.000Z",
+    "content": "<p>Krugerrand Test Placeholder for 1st article</p>\n"
+  },
+  {
     "id": "2026-09-27-last-test-of-the-day",
     "title": "Last Test of the Day",
     "category": "burj",
