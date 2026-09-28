@@ -15,8 +15,7 @@ content:
         label: Visual Plate Asset
         type: select
         options:
-      <available_expandable_skills>
-      <values>
+          values:
             - label: "Salisminster (US Treasury)"
               value: "ustreasury.jpg"
             - label: "Burj - Yen Plate"
