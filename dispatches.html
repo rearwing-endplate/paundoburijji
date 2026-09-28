@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="styles.css">
 
-<!-- PERFORMANCE: Preload the dynamically selected blueprint to eliminate layout/load delay -->
+<!-- PERFORMANCE: Preload the dynamically selected blueprint -->
 <link rel="preload" as="image" id="blueprintPreload" href="dispatch-plan-01.jpg" fetchpriority="high">
 
 <style>
@@ -35,7 +35,17 @@
     object-position: right center;
     -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 85%);
     mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 85%);
+    
+    /* ANIMATION MASKING: Start invisible and blurred until fully loaded */
+    opacity: 0;
+    filter: blur(6px);
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Triggers the smooth fade-in reveal once loaded */
+  .blueprint-underlay img.loaded {
     opacity: 0.85;
+    filter: blur(0px);
   }
 
   .archive-constrained {
@@ -64,11 +74,9 @@
     ];
     const selectedBlueprint = blueprints[Date.now() % blueprints.length];
     
-    // Dynamically update the preload link href to match the chosen blueprint
     const preloadLink = document.getElementById('blueprintPreload');
     if (preloadLink) preloadLink.href = selectedBlueprint;
     
-    // Store globally so the img tag picks it up instantly
     window.__selectedBlueprint = selectedBlueprint;
   })();
 </script>
@@ -121,12 +129,21 @@
 <!-- Edge-to-Edge Dynamic Blueprint Container -->
 <section class="archive-full-bleed">
   <div class="blueprint-underlay">
-    <img id="dynamicBlueprintImg" src="" alt="Zaha Hadid architectural line drawing blueprint" fetchpriority="high" decoding="async">
+    <img id="dynamicBlueprintImg" alt="Zaha Hadid architectural line drawing blueprint" fetchpriority="high" decoding="async">
   </div>
 
   <script>
-    // Inject the pre-calculated blueprint path immediately into the img source
-    document.getElementById('dynamicBlueprintImg').src = window.__selectedBlueprint;
+    const imgEl = document.getElementById('dynamicBlueprintImg');
+    imgEl.src = window.__selectedBlueprint;
+
+    // Smooth reveal handle as soon as network finishes downloading the asset
+    if (imgEl.complete) {
+      imgEl.classList.add('loaded');
+    } else {
+      imgEl.onload = () => {
+        imgEl.classList.add('loaded');
+      };
+    }
   </script>
 
   <div class="archive-constrained">
@@ -245,7 +262,7 @@
       paginationHTML += `<button class="page-num-btn ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next &rarr;</button>`;
       paginationHTML += '</div>';
       paginationFooter.innerHTML = paginationHTML;
-      paginationFooter.style.display = 'flex';
+      paginationFooter.style.paginationFooter = 'flex';
     } else {
       paginationFooter.innerHTML = `<div>Showing all ${totalItems} incites</div><div>Page 1 of 1</div>`;
       paginationFooter.style.display = 'flex';
