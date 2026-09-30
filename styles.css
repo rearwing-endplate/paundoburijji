@@ -656,13 +656,42 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
 /* ==========================================
    MAMMOTH.JS DOCX IMAGE PARSING
    ========================================== */
-#dispatchBody img {
+/*#dispatchBody img {
   display: block;
   min-width: 75%;
   max-width: 100%;
   margin: 48px auto;
   border-radius: 12px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}*/
+
+/* ======================================================
+   DISPATCH IMAGE EDITORIAL BREAKOUT
+   Expands TradingView charts & plates past the 840px column
+   to almost fill the screen while staying centered.
+   ====================================================== */
+#dispatchBody img {
+  display: block;
+  width: min(94vw, 1360px);        /* Almost fills screen (94% viewport), caps at 1360px */
+  max-width: 94vw;
+  height: auto;
+  margin: 52px 0 20px 50%;         /* 50% push from parent column */
+  transform: translateX(-50%);     /* Pulls image back by half its own width to center */
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12); /* Crisp architectural border for dark charts */
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Optional: Elegant styling for chart captions (e.g., "Courtesy of TradingView") */
+#dispatchBody p:has(> img) + p:has(> em),
+#dispatchBody p:has(> img) + p {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--stone-dim);
+  text-align: center;
+  margin-top: -6px;
+  margin-bottom: 48px;
 }
 
 /* ---------- SECTION 05: MECHANICAL INCITE REEL (REFACTORED) ---------- */
