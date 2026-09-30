@@ -207,7 +207,7 @@ async function main() {
     const bgImage = parsed.data.bgImage || DEFAULT_PLATE;
     const category = bgImage === 'ustreasury.jpg' ? 'salisminster' : 'burj';
 
-    const content = marked.parse(parsed.content);
+    const content = marked.parse(parsed.content, { breaks: true });
     const description = String(parsed.data.description || excerpt(content));
 
     let slug = slugify(id);
