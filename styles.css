@@ -947,3 +947,10 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
     min-height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
   }
 }
+
+#dispatchBody p { margin: 0 0 1.4em; }
+#dispatchBody h2, #dispatchBody h3 { font-family: var(--display); font-weight: 400; color: #fff; line-height: 1.2; margin: 2em 0 0.6em; }
+#dispatchBody ul, #dispatchBody ol { margin: 0 0 1.4em; padding-left: 1.4em; }
+#dispatchBody li { margin-bottom: 0.4em; }
+#dispatchBody blockquote { margin: 0 0 1.4em; padding-left: 1.2em; border-left: 2px solid var(--gold); color: var(--stone-dim); }
+#dispatchBody a { color: var(--gold); }
