@@ -241,7 +241,7 @@
       const isSalis = art.category === 'salisminster';
       const bgImg = art.bgImage || (isSalis ? 'ustreasury.jpg' : 'yennote.jpg');
       container.innerHTML += `
-        <article class="incite-card full-width" style="background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${bgImg}'); background-size: cover; background-position: center; min-height: 220px; padding: 40px;" onclick="window.location.href='dispatch.html?id=${encodeURIComponent(art.id)}'">
+        <article class="incite-card full-width" style="background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${bgImg}'); background-size: cover; background-position: center; min-height: 220px; padding: 40px;" onclick="window.location.href='${art.url || ('dispatch.html?id=' + encodeURIComponent(art.id))}'">
           <div>
             <h3>${art.title}</h3>
             <div class="swiss-num" style="margin-top: 14px; margin-bottom: 0;">

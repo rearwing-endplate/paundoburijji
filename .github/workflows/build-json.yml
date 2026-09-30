@@ -1,13 +1,23 @@
-name: Build Articles JSON
+name: Build articles, dispatch pages & share previews
 
 on:
   push:
     branches: [ main ]
-    paths: ['dispatches/**']
+    paths:
+      - 'dispatches/**'        # new / edited dispatches from the CMS
+      - 'dispatch.html'        # page template
+      - 'scripts/build.js'     # the build itself
+      - '*.jpg'                # visual plates in the repo root
+      - '*.png'
+      - 'assets/**'            # ...or in /assets
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: build-site
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -22,68 +32,19 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install gray-matter marked
+        run: npm install --no-save gray-matter@4 marked@12 cheerio@1 sharp@0.33
 
-      - name: Generate articles.json
-        run: |
-          node -e '
-          const fs = require("fs");
-          const path = require("path");
-          const matter = require("gray-matter");
-          const { marked } = require("marked");
-
-          const dir = path.join(process.cwd(), "dispatches");
-          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-          const files = fs.readdirSync(dir).filter(f => f.endsWith(".md") || f.endsWith(".markdown"));
-          const articles = [];
-
-          files.forEach(file => {
-            const filePath = path.join(dir, file);
-            const fileContent = fs.readFileSync(filePath, "utf8");
-            const parsed = matter(fileContent);
-
-            const id = parsed.data.id || path.basename(file, path.extname(file));
-            const title = parsed.data.title || "Untitled";
-
-            // Publication date straight from CMS front matter. This is the single
-            // source of truth for chronological order on both index.html and
-            // dispatches.html, so it must always be carried through here.
-            const rawDate = parsed.data.date || null;
-            const date = rawDate ? new Date(rawDate).toISOString() : null;
-
-            // Automatically infer category and bgImage from the unified plate selection
-            const bgImage = parsed.data.bgImage || "ustreasury.jpg";
-            const category = (bgImage === "ustreasury.jpg") ? "salisminster" : "burj";
-
-            const htmlContent = marked.parse(parsed.content);
-
-            articles.push({
-              id: id,
-              title: title,
-              category: category,
-              bgImage: bgImage,
-              date: date,
-              content: htmlContent
-            });
-          });
-
-          // Sort newest-first here too, so articles.json itself is already in the
-          // right order (the front-end re-sorts defensively, but this keeps the
-          // raw JSON meaningful on its own and keeps the two sources of truth aligned).
-          articles.sort((a, b) => {
-            const ta = a.date ? new Date(a.date).getTime() : 0;
-            const tb = b.date ? new Date(b.date).getTime() : 0;
-            return tb - ta;
-          });
-
-          fs.writeFileSync("articles.json", JSON.stringify(articles, null, 2));
-          console.log("Successfully generated articles.json with " + articles.length + " dispatches.");
-          '
+      - name: Build articles.json, dispatch pages and share images
+        env:
+          # Optional: set a repository variable named SITE_URL (Settings > Secrets and
+          # variables > Actions > Variables) e.g. https://poundbridge.com
+          # If it is empty the script uses your CNAME file, else <owner>.github.io/<repo>.
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: node scripts/build.js
 
       - name: Commit and push if changed
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add articles.json
-          git diff --staged --quiet || (git commit -m "Auto-compile articles.json with inferred category from visual plate" && git push)
+          git add -A articles.json d og
+          git diff --staged --quiet || (git commit -m "Auto-build articles.json, dispatch pages and share images" && git push)
