@@ -108,6 +108,13 @@
 
     const article = articles.find(a => a.id === articleId);
 
+    // Old-style ?id= link: hop to the pre-rendered page so the address bar
+    // shows the shareable URL (the one with link-preview tags).
+    if (article && article.url) {
+      window.location.replace(article.url);
+      return;
+    }
+
     if (article) {
       document.title = `${article.title} — Poundbridge`;
       document.getElementById('dispatchMeta').innerHTML = `[ INCITE // ${article.category.toUpperCase()} ]`;
