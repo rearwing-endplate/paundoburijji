@@ -3,34 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poundbridge | Salisminster & Burj Al-Jabr</title>
+    <title>Poundbridge | Salisminster &amp; Burj Al-Jabr</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="styles.css">
 
     <!-- Primary Meta Tags -->
-    <meta name="title" content="Poundbridge | Salisminster & Burj Al-Jabr">
+    <meta name="title" content="Poundbridge | Salisminster &amp; Burj Al-Jabr">
     <meta name="description" content="Institutional digital basilica and quantitative family office framework.">
 
     <!-- Open Graph / WhatsApp / LinkedIn -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://poundbridge.co.za/">
-    <meta property="og:title" content="Poundbridge | Salisminster & Burj Al-Jabr">
+    <meta property="og:title" content="Poundbridge | Salisminster &amp; Burj Al-Jabr">
     <meta property="og:description" content="Institutional digital basilica and quantitative family office framework.">
     <meta property="og:image" content="https://poundbridge.co.za/preview-logo.jpg">
-	<meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://poundbridge.co.za/">
-    <meta property="twitter:title" content="Poundbridge | Salisminster & Burj Al-Jabr">
+    <meta property="twitter:title" content="Poundbridge | Salisminster &amp; Burj Al-Jabr">
     <meta property="twitter:description" content="Institutional digital basilica and quantitative family office framework.">
     <meta property="twitter:image" content="https://poundbridge.co.za/preview-logo.jpg">
-	<meta property="twitter:image:type" content="image/jpeg">
+    <meta property="twitter:image:type" content="image/jpeg">
     <meta property="twitter:image:width" content="1200">
     <meta property="twitter:image:height" content="630">
-
 </head>
 <body>
 
@@ -642,7 +641,6 @@
     if (category === currentDeskCategory) return;
     currentDeskCategory = category;
   
-    // Clear any active transition timer to handle rapid clicks cleanly
     if (deskMorphTimer) {
       clearTimeout(deskMorphTimer);
       deskMorphTimer = null;
@@ -653,15 +651,12 @@
     const tabs = document.querySelectorAll('.apple-segmented-control .enq-tab');
     const enqCategoryInput = document.getElementById('enqCategory');
   
-    // 1. Sync hidden form input
     if (enqCategoryInput) enqCategoryInput.value = category;
   
-    // 2. Update active pill tab state
     tabs.forEach(tab => {
       tab.classList.toggle('active', tab.getAttribute('data-category') === category);
     });
   
-    // 3. Trigger segmented pill slide & card warmth glow via CSS classes
     if (category === 'mql5_quant') {
       if (segControl) segControl.classList.add('burj-active');
       if (commsCard) commsCard.classList.add('burj-warmth');
@@ -670,7 +665,6 @@
       if (commsCard) commsCard.classList.remove('burj-warmth');
     }
   
-    // 4. Glassmorphic Dissolve & Bloom (Two-Phase Morph)
     const descGen = document.getElementById('enqDescGeneral');
     const descBurj = document.getElementById('enqDescMql5_quant');
     const fieldsGen = document.querySelector('.enq-fields[data-fields-for="general"]');
@@ -681,7 +675,6 @@
     const outgoingFields = category === 'mql5_quant' ? fieldsGen : fieldsBurj;
     const incomingFields = category === 'mql5_quant' ? fieldsBurj : fieldsGen;
   
-    // Phase A: Morph out (Gaussian blur to 8px, fade, slight translateY)
     if (outgoingDesc) {
       outgoingDesc.classList.remove('morph-in');
       outgoingDesc.classList.add('morph-out');
@@ -691,7 +684,6 @@
       outgoingFields.classList.add('morph-out');
     }
   
-    // Phase B: Swap visibility and morph in (Bloom to 0px blur and 100% opacity)
     deskMorphTimer = setTimeout(() => {
       if (outgoingDesc) {
         outgoingDesc.style.display = 'none';
@@ -706,7 +698,7 @@
         incomingDesc.style.display = 'block';
         incomingDesc.classList.remove('morph-in');
         incomingDesc.classList.add('morph-out');
-        void incomingDesc.offsetWidth; // Force layout reflow so transition starts from blur
+        void incomingDesc.offsetWidth;
         incomingDesc.classList.remove('morph-out');
         incomingDesc.classList.add('morph-in');
       }
@@ -715,14 +707,13 @@
         incomingFields.style.display = 'block';
         incomingFields.classList.remove('morph-in');
         incomingFields.classList.add('morph-out');
-        void incomingFields.offsetWidth; // Force layout reflow
+        void incomingFields.offsetWidth;
         incomingFields.classList.remove('morph-out');
         incomingFields.classList.add('morph-in');
       }
     }, 180);
   }
   
-  // Wire up the Genesis Enquiry Form submit handler
   const enquiryForm = document.getElementById('enquiryForm');
   if (enquiryForm) {
     enquiryForm.addEventListener('submit', (e) => {
@@ -741,13 +732,22 @@
   }
   
   // ==========================================
-  // DATA PIPELINE & ANCHORED SECTION 05 STACK
+  // DATA PIPELINE & REFACTORED INCITES STACK
   // ==========================================
   let articles = [];
   let rightStackOffset = 0;
   let activeFilter = 'all';
   let lastScrollDirection = 'down';
   const MAX_STACK_ITEMS = 12;
+
+  // DUAL-DESK PLATE RESOLVER: Locks Salisminster to ustreasury.jpg
+  function resolvePlateUrl(bgImage, category) {
+    if (category === 'salisminster' || bgImage === 'ustreasury.jpg' || bgImage === '/ustreasury.jpg') {
+      return 'ustreasury.jpg';
+    }
+    if (!bgImage) return 'yennote.jpg';
+    return bgImage;
+  }
 
   async function initializeData() {
     let rawArticles = [];
@@ -764,10 +764,8 @@
       rawArticles = JSON.parse(localStorage.getItem('poundbridge_articles')) || [];
     }
 
-    // Attach original array index (_originalIndex) so CMS append order is preserved as a reliable fallback
     articles = rawArticles.map((art, idx) => ({ ...art, _originalIndex: idx }));
 
-    // Bulletproof chronological sort: newest date first, falling back to reverse-append order (_originalIndex descending)
     articles.sort((a, b) => {
       const parseTime = (val) => {
         if (!val) return 0;
@@ -779,10 +777,8 @@
       const timeB = parseTime(b.date);
       
       if (timeA !== timeB) {
-        return timeB - timeA; // Newest date first
+        return timeB - timeA;
       }
-      
-      // Fallback: Pages CMS appends new items at the end, so higher original index = newer item
       return b._originalIndex - a._originalIndex;
     });
 
@@ -796,9 +792,9 @@
     const firstCard = track?.querySelector('.reel-card');
     if (!track || !firstCard) return { pitch: 209, cardHeight: 185, gap: 24 };
 
-    const cardHeight = firstCard.getBoundingClientRect().height || 185;
+    const cardHeight = Math.round(firstCard.getBoundingClientRect().height) || 185;
     const styles = getComputedStyle(track);
-    const gap = parseFloat(styles.rowGap || styles.gap || '24') || 24;
+    const gap = Math.round(parseFloat(styles.rowGap || styles.gap || '24')) || 24;
     return { cardHeight, gap, pitch: cardHeight + gap };
   }
 
@@ -816,21 +812,28 @@
     thumb.style.top = `${markerTopPct}%`;
   }
 
+  // Ensures active framed cards receive full opacity without blur
+  function updateVisibleSlotClasses(currentOffset) {
+    const track = document.getElementById('stackCardsInner');
+    if (!track) return;
+    const cards = track.querySelectorAll('.reel-card');
+    cards.forEach((card, idx) => {
+      const isVisible = (idx === currentOffset || idx === currentOffset + 1);
+      card.classList.toggle('is-visible-slot', isVisible);
+    });
+  }
+
   function animateIncitesReel(previousOffset, nextOffset, direction) {
     const track = document.getElementById('stackCardsInner');
     if (!track || previousOffset === nextOffset) return;
 
     const { pitch } = getReelMetrics();
-    const fromY = -(previousOffset * pitch);
-    const toY = -(nextOffset * pitch);
+    const fromY = Math.round(-(previousOffset * pitch));
+    const toY = Math.round(-(nextOffset * pitch));
 
     if (track.__reelAnimation) {
       try { track.__reelAnimation.cancel(); } catch (_) {}
       track.__reelAnimation = null;
-    }
-    if (track.__reelBlurAnimation) {
-      try { track.__reelBlurAnimation.cancel(); } catch (_) {}
-      track.__reelBlurAnimation = null;
     }
 
     const controls = document.querySelectorAll('.slot-control');
@@ -838,27 +841,23 @@
 
     const travel = toY - fromY;
     const travelDir = travel < 0 ? -1 : 1;
-    const overshoot = 3.2 * travelDir;
-    const travelDuration = 610;
-    const settleDuration = 55;
+    const overshoot = Math.round(3 * travelDir);
+    const travelDuration = 520;
+    const settleDuration = 50;
 
     track.classList.add('is-spinning');
     track.style.transition = 'none';
     track.style.transform = `translate3d(0, ${fromY}px, 0)`;
-    track.style.filter = 'blur(0px) saturate(1)';
     void track.offsetWidth;
 
     const finish = () => {
       if (track.__reelAnimation) {
         try { track.__reelAnimation.cancel(); } catch (_) {}
       }
-      if (track.__reelBlurAnimation) {
-        try { track.__reelBlurAnimation.cancel(); } catch (_) {}
-      }
       track.__reelAnimation = null;
-      track.__reelBlurAnimation = null;
-      track.style.transition = `transform ${settleDuration}ms cubic-bezier(0.2, 0.82, 0.24, 1)`;
+      track.style.transition = `transform ${settleDuration}ms cubic-bezier(0.16, 1, 0.3, 1)`;
       track.style.transform = `translate3d(0, ${toY + overshoot}px, 0)`;
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           track.style.transform = `translate3d(0, ${toY}px, 0)`;
@@ -867,10 +866,11 @@
 
       window.setTimeout(() => {
         track.style.transition = '';
-        track.style.filter = '';
+        track.style.filter = 'none';
         track.classList.remove('is-spinning');
         track.__reelAnimation = null;
-        track.__reelBlurAnimation = null;
+
+        updateVisibleSlotClasses(nextOffset);
 
         const winnerIndex = direction > 0 ? nextOffset + 1 : nextOffset;
         const winner = track.querySelector(`[data-reel-index="${winnerIndex}"]`);
@@ -893,45 +893,31 @@
           downBtn.disabled = rightStackOffset >= maxOffset;
           downBtn.removeAttribute('aria-busy');
         }
-      }, settleDuration + 24);
+      }, settleDuration + 20);
     };
 
     if (typeof track.animate === 'function') {
       const transformAnimation = track.animate([
         { transform: `translate3d(0, ${fromY}px, 0)` },
-        { transform: `translate3d(0, ${fromY + travel * 0.20}px, 0)` },
-        { transform: `translate3d(0, ${fromY + travel * 0.78}px, 0)` },
+        { transform: `translate3d(0, ${Math.round(fromY + travel * 0.22)}px, 0)` },
+        { transform: `translate3d(0, ${Math.round(fromY + travel * 0.78)}px, 0)` },
         { transform: `translate3d(0, ${toY + overshoot}px, 0)` }
       ], {
         duration: travelDuration,
         fill: 'forwards',
-        easing: 'cubic-bezier(0.22, 0.67, 0.25, 1)'
-      });
-
-      const blurAnimation = track.animate([
-        { filter: 'blur(0px) saturate(1)' },
-        { filter: 'blur(0.9px) saturate(0.92)' },
-        { filter: 'blur(0.36px) saturate(0.97)' },
-        { filter: 'blur(0px) saturate(1)' }
-      ], {
-        duration: travelDuration,
-        fill: 'forwards',
-        easing: 'ease-out'
+        easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
       });
 
       track.__reelAnimation = transformAnimation;
-      track.__reelBlurAnimation = blurAnimation;
-      Promise.all([transformAnimation.finished, blurAnimation.finished]).then(finish).catch(finish);
+      transformAnimation.finished.then(finish).catch(finish);
       return;
     }
 
-    track.style.transition = `transform ${travelDuration}ms cubic-bezier(0.22, 0.67, 0.25, 1), filter ${travelDuration}ms ease-out`;
-    track.style.filter = 'blur(0.9px) saturate(.92)';
+    track.style.transition = `transform ${travelDuration}ms cubic-bezier(0.16, 1, 0.3, 1)`;
     requestAnimationFrame(() => {
       track.style.transform = `translate3d(0, ${toY + overshoot}px, 0)`;
-      track.style.filter = 'blur(0px) saturate(1)';
     });
-    window.setTimeout(finish, travelDuration + 20);
+    window.setTimeout(finish, travelDuration + 15);
   }
 
   function scrollIncitesStack(direction) {
@@ -971,7 +957,7 @@
     }
 
     const getBgStyle = (art) => {
-      const img = art.bgImage || (art.category === 'salisminster' ? 'ustreasury.jpg' : 'yennote.jpg');
+      const img = resolvePlateUrl(art.bgImage, art.category);
       return `background-image: linear-gradient(180deg, rgba(10,10,11,0.15) 0%, rgba(10,10,11,0.78) 65%, rgba(10,10,11,0.96) 100%), url('${img}'); background-size: cover; background-position: center;`;
     };
 
@@ -1029,8 +1015,9 @@
 
       const stackCards = stackItems.map((art, idx) => {
         const isSalis = art.category === 'salisminster';
+        const isFramed = (idx === rightStackOffset || idx === rightStackOffset + 1);
         return `
-          <article class="incite-card secondary reel-card" data-reel-index="${idx}" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
+          <article class="incite-card secondary reel-card ${isFramed ? 'is-visible-slot' : ''}" data-reel-index="${idx}" style="${getBgStyle(art)}" onclick="handleInciteInteraction('${art.id}')" ontouchend="handleMobileTap(event, '${art.id}')">
             <div>
               <h3 style="font-size: clamp(18px, 1.8vw, 22px);">${art.title}</h3>
               <div class="swiss-num" style="margin-top: 12px; margin-bottom: 0;">
@@ -1069,7 +1056,7 @@
               </button>
             </div>
 
-            <div class="slot-window" data-visible-count="2" style="--visible-count:2;">
+            <div class="slot-window" data-visible-count="2">
               <div id="stackCardsInner" class="slot-track">
                 ${stackCards}
               </div>
@@ -1090,9 +1077,10 @@
       const track = document.getElementById('stackCardsInner');
       if (track) {
         const { pitch } = getReelMetrics();
-        track.style.transform = `translate3d(0, ${-(rightStackOffset * pitch)}px, 0)`;
+        track.style.transform = `translate3d(0, ${Math.round(-(rightStackOffset * pitch))}px, 0)`;
       }
       updateReelRail(stackItems.length, rightStackOffset, visibleCount);
+      updateVisibleSlotClasses(rightStackOffset);
       return;
     }
 

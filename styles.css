@@ -29,6 +29,7 @@ body {
   font-size: 15.5px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-wrap: break-word;
   word-break: break-word;
 }
@@ -441,6 +442,7 @@ svg[data-timescale="millennia"] .salis-stream { animation: pincerDashFlow 1.2s l
   min-height: 280px;
   box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 .incite-card.featured {
@@ -650,31 +652,42 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
   background: rgba(217, 107, 120, 0.18);
   border-color: #d96b78;
 }
+
 /* ==========================================
    MAMMOTH.JS DOCX IMAGE PARSING
    ========================================== */
 #dispatchBody img {
   display: block;
-  min-width: 75%;          /* Ensures it takes up at least 75% of the column */
-  max-width: 100%;         /* Prevents it from breaking out of the container */
-  margin: 48px auto;       /* Centers the image perfectly and adds vertical breathing room */
-  border-radius: 12px;     /* Subtle curve to match the overarching aesthetic */
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); /* Beds the image into the obsidian background */
+  min-width: 75%;
+  max-width: 100%;
+  margin: 48px auto;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
-/* ---------- SECTION 05: MECHANICAL INCITE REEL ---------- */
+
+/* ---------- SECTION 05: MECHANICAL INCITE REEL (REFACTORED) ---------- */
 .swiss-incites-grid.reel-layout {
-  grid-template-columns: minmax(0, 1.85fr) 28px minmax(0, 1fr);
-  gap: 0;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.85fr) 30px minmax(0, 1fr);
+  column-gap: 0;
+  align-items: center;
+}
+
+.main-incite-window {
+  align-self: center;
+  height: 394px; /* 2 x 185px windows + 24px mechanical gap */
+  min-height: 394px;
 }
 
 .reel-gutter {
   grid-column: 2;
   position: relative;
-  min-width: 28px;
+  min-width: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
+  height: 394px;
+  min-height: 394px;
 }
 
 .reel-rail {
@@ -700,7 +713,7 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
   border-radius: 999px;
   background: #ffffff;
   box-shadow: 0 0 12px rgba(255,255,255,0.58), 0 0 3px rgba(255,255,255,0.95);
-  transition: top 1.10s cubic-bezier(0.12, 0.68, 0.2, 1), height 0.65s ease;
+  transition: top 0.65s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s ease;
 }
 
 .reel-column {
@@ -709,6 +722,7 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-self: center;
 }
 
 .slot-controls {
@@ -764,7 +778,7 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
   position: relative;
   overflow: hidden;
   min-height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
-  height: calc((var(--slot-card-h) * var(--visible-count)) + (var(--slot-gap) * (var(--visible-count) - 1)));
+  height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
   border-top: 1px solid rgba(255,255,255,0.08);
   border-bottom: 1px solid rgba(255,255,255,0.08);
   background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.002) 18%, rgba(0,0,0,0.14) 82%, rgba(255,255,255,0.018));
@@ -777,7 +791,7 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
   position: absolute;
   left: 0;
   right: 0;
-  height: 30px;
+  height: 28px;
   z-index: 4;
   pointer-events: none;
 }
@@ -815,54 +829,64 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
   flex-direction: column;
   gap: var(--slot-gap);
   padding: 0;
-  will-change: transform, filter;
-  transition: transform 1.82s cubic-bezier(0.12, 0.72, 0.15, 1), filter 0.48s ease-out;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
+/* 
+   FIX: Cards are permanently sharp and scaled to 1.
+   No blur filters are applied to children, eliminating GPU smearing & fuzziness.
+*/
 .slot-track .reel-card {
   height: var(--slot-card-h);
   min-height: var(--slot-card-h);
   flex: 0 0 var(--slot-card-h);
   margin: 0;
-  transform: scale(0.992);
-  opacity: .78;
-  filter: blur(0.8px) saturate(.88);
-  transition: transform 0.72s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.72s ease, filter 0.72s ease, border-color .35s ease, box-shadow .35s ease;
+  transform: translateZ(0);
+  opacity: 0.82;
+  filter: none;
+  transition: opacity 0.3s ease, border-color .35s ease, box-shadow .35s ease;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .slot-track .reel-card.is-visible-slot {
   opacity: 1;
-  filter: blur(0) saturate(1);
-  transform: scale(1);
+  filter: none;
 }
 
+.slot-track .reel-card:hover {
+  transform: none;
+}
+
+/* Pure track-level motion blur only during active spin travel */
 .slot-track.is-spinning {
-  filter: blur(0.55px) saturate(.94);
+  filter: blur(0.5px);
 }
 
 .slot-track.is-spinning .reel-card {
-  filter: blur(0.9px) saturate(.9);
-  opacity: .86;
+  filter: none;
+  opacity: 0.88;
+}
+
+.slot-track.is-spinning .reel-card:hover {
+  transform: none;
 }
 
 .slot-track.is-settling {
-  filter: blur(1.1px) saturate(.9);
-}
-
-.slot-track.is-settling .reel-card.is-visible-slot {
-  filter: blur(0) saturate(1);
-  opacity: 1;
+  filter: none;
 }
 
 @keyframes reelWinner {
   0% { transform: scale(1); border-color: rgba(255,255,255,0.14); box-shadow: 0 22px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2); }
-  34% { transform: scale(1.008); border-color: rgba(200,163,94,0.82); box-shadow: 0 25px 56px rgba(0,0,0,0.68), 0 0 18px rgba(200,163,94,0.13), inset 0 1px 0 rgba(200,163,94,0.30); }
-  68% { transform: scale(1.003); border-color: rgba(200,163,94,0.48); box-shadow: 0 23px 52px rgba(0,0,0,0.64), 0 0 10px rgba(200,163,94,0.08), inset 0 1px 0 rgba(200,163,94,0.20); }
+  34% { transform: scale(1.006); border-color: rgba(200,163,94,0.82); box-shadow: 0 25px 56px rgba(0,0,0,0.68), 0 0 18px rgba(200,163,94,0.13), inset 0 1px 0 rgba(200,163,94,0.30); }
+  68% { transform: scale(1.002); border-color: rgba(200,163,94,0.48); box-shadow: 0 23px 52px rgba(0,0,0,0.64), 0 0 10px rgba(200,163,94,0.08), inset 0 1px 0 rgba(200,163,94,0.20); }
   100% { transform: scale(1); border-color: rgba(255,255,255,0.14); box-shadow: 0 22px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2); }
 }
 
 .slot-track .reel-card.reel-win {
-  animation: reelWinner 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: reelWinner 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (max-width: 1024px) {
@@ -872,79 +896,27 @@ footer .wrap { display: flex; justify-content: space-between; align-items: flex-
   }
   .reel-gutter { display: none; }
   .reel-column { grid-column: 1; }
-}
-
-@media (max-width: 700px) {
-  .slot-window {
-    --slot-card-h: 170px;
-    --slot-gap: 18px;
-    height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
-  }
-  .slot-track .reel-card {
-    height: var(--slot-card-h);
-    min-height: var(--slot-card-h);
-    flex-basis: var(--slot-card-h);
-  }
-}
-
-/* ---------- SECTION 05: 1 + 2 REEL GEOMETRY / MECHANICAL LANDING ---------- */
-.swiss-incites-grid.reel-layout {
-  grid-template-columns: minmax(0, 1.85fr) 30px minmax(0, 1fr);
-  column-gap: 0;
-  align-items: center;
-}
-
-.main-incite-window {
-  align-self: center;
-  height: 394px; /* 2 x 185px windows + 24px mechanical gap */
-  min-height: 394px;
-}
-
-.reel-gutter {
-  align-self: center;
-  height: 394px;
-  min-height: 394px;
-}
-
-.reel-column {
-  align-self: center;
-}
-
-.slot-window {
-  --slot-card-h: 185px;
-  --slot-gap: 24px;
-  height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
-  min-height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
-}
-
-.slot-track .reel-card:hover {
-  transform: none;
-}
-
-.slot-track.is-spinning .reel-card:hover {
-  transform: none;
-}
-
-@media (max-width: 1024px) {
-  .main-incite-window,
-  .reel-gutter {
+  .main-incite-window {
     height: 394px;
     min-height: 394px;
   }
 }
 
 @media (max-width: 700px) {
-  .main-incite-window,
-  .reel-gutter {
+  .main-incite-window {
     height: 358px;
     min-height: 358px;
   }
-
   .slot-window {
     --slot-card-h: 170px;
     --slot-gap: 18px;
     height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
     min-height: calc((var(--slot-card-h) * 2) + var(--slot-gap));
+  }
+  .slot-track .reel-card {
+    height: var(--slot-card-h);
+    min-height: var(--slot-card-h);
+    flex-basis: var(--slot-card-h);
   }
 }
 
