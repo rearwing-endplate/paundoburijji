@@ -518,10 +518,10 @@
           <div class="form-group" style="margin-bottom:18px;">
             <label class="field-label-luxe"><span class="field-idx">[ 02 ]</span> Visual Plate Asset</label>
             <select id="artBgImage" class="form-control select-luxe">
-              <option value="ustreasury.jpg">Salisminster (US Treasury)</option>
-              <option value="yennote.jpg">Burj - Yen Plate</option>
-              <option value="alexanderhamilton.jpg">Burj - Alexander Plate</option>
-              <option value="euro.jpg">Burj - Euro Plate</option>
+              <option value="assets/incite-headers/ustreasury.jpg">Salisminster (US Treasury)</option>
+              <option value="assets/incite-headers/yennote.jpg">Burj - Yen Plate</option>
+              <option value="assets/incite-headers/alexanderhamilton.jpg">Burj - Alexander Plate</option>
+              <option value="assets/incite-headers/euro.jpg">Burj - Euro Plate</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:18px;">
@@ -548,9 +548,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.0/mammoth.browser.min.js"></script>
 <script>
-  // ==========================================
-  // SCROLL PROGRESS & LIVE CLOCK
-  // ==========================================
   window.addEventListener('scroll', () => {
     const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
     const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
@@ -582,9 +579,6 @@
   setInterval(updateLiveClock, 1000);
   updateLiveClock();
 
-  // ==========================================
-  // TELEMETRY TIMESCALE SWITCHER
-  // ==========================================
   function setTimescale(scale) {
     const pill = document.getElementById('timeSegPill');
     const tabs = document.querySelectorAll('.time-seg-tab');
@@ -631,9 +625,6 @@
     }, 180);
   }
 
-  // ==========================================
-  // COMMS SECTION: DESK CONTROLLER & MORPH ENGINE
-  // ==========================================
   let currentDeskCategory = 'general';
   let deskMorphTimer = null;
   
@@ -731,21 +722,21 @@
     });
   }
   
-  // ==========================================
-  // DATA PIPELINE & REFACTORED INCITES STACK
-  // ==========================================
   let articles = [];
   let rightStackOffset = 0;
   let activeFilter = 'all';
   let lastScrollDirection = 'down';
   const MAX_STACK_ITEMS = 12;
 
-  // DUAL-DESK PLATE RESOLVER: Locks Salisminster to ustreasury.jpg
   function resolvePlateUrl(bgImage, category) {
-    if (category === 'salisminster' || bgImage === 'ustreasury.jpg' || bgImage === '/ustreasury.jpg') {
-      return 'ustreasury.jpg';
+    if (category === 'salisminster' || (bgImage && bgImage.includes('ustreasury.jpg'))) {
+      return 'assets/incite-headers/ustreasury.jpg';
     }
-    if (!bgImage) return 'yennote.jpg';
+    if (!bgImage) return 'assets/incite-headers/yennote.jpg';
+
+    if (!bgImage.includes('/')) {
+      return `assets/incite-headers/${bgImage}`;
+    }
     return bgImage;
   }
 
@@ -812,7 +803,6 @@
     thumb.style.top = `${markerTopPct}%`;
   }
 
-  // Ensures active framed cards receive full opacity without blur
   function updateVisibleSlotClasses(currentOffset) {
     const track = document.getElementById('stackCardsInner');
     if (!track) return;
@@ -1030,7 +1020,6 @@
 
       html = `
         <div class="swiss-incites-grid reel-layout" data-stack-count="${stackItems.length}">
-          <!-- 1: fixed main window -->
           <article class="incite-card featured main-incite-window" style="${getBgStyle(artFeatured)}" onclick="handleInciteInteraction('${artFeatured.id}')" ontouchend="handleMobileTap(event, '${artFeatured.id}')">
             <div>
               <h3>${artFeatured.title}</h3>
@@ -1040,7 +1029,6 @@
             </div>
           </article>
 
-          <!-- white mechanical position bar -->
           <div class="reel-gutter" aria-hidden="true">
             <div class="reel-rail">
               <div class="reel-rail-track"></div>
@@ -1048,7 +1036,6 @@
             </div>
           </div>
 
-          <!-- 2: moving windows -->
           <div class="reel-column">
             <div class="slot-controls">
               <button id="stackScrollUpBtn" class="slot-control" onclick="scrollIncitesStack(-1)" aria-label="Scroll up stack" ${upDisabled ? 'disabled' : ''}>

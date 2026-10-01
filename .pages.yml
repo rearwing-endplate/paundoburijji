@@ -13,27 +13,7 @@ content:
         type: string
       - name: bgImage
         label: Visual Plate Asset
-        type: select
-        options:
-          values:
-            - label: "Salisminster (US Treasury)"
-              value: "ustreasury.jpg"
-            - label: "Burj - Yen Plate"
-              value: "yennote.jpg"
-            - label: "Burj - Alexander Plate"
-              value: "alexanderhamilton.jpg"
-            - label: "Burj - Euro Plate"
-              value: "euro.jpg"
-            - label: "Burj - Kerry Washington Plate"
-              value: "kerrywashington.jpg"
-            - label: "Burj - Paul Kruger Plate"
-              value: "paulkruger.jpg"
-            - label: "Burj - Emilia Clarke Plate"
-              value: "emiliaclarke.png"
-            - label: "Burj - Cecil John Rhodes Plate"
-              value: "ceciljohnrhodes.jpg"
-            - label: "Burj - Cardi B Plate"
-              value: "cardib.jpg"
+        type: image
       - name: date
         label: Publication Date
         type: date

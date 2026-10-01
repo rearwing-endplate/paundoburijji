@@ -4,12 +4,10 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'dispatches/**'        # new / edited dispatches from the CMS
-      - 'dispatch.html'        # page template
-      - 'scripts/build.js'     # the build itself
-      - '*.jpg'                # visual plates in the repo root
-      - '*.png'
-      - 'assets/**'            # ...or in /assets
+      - 'dispatches/**'
+      - 'dispatch.html'
+      - 'scripts/build.js'
+      - 'assets/incite-headers/**'
   workflow_dispatch:
 
 permissions:
@@ -36,9 +34,6 @@ jobs:
 
       - name: Build articles.json, dispatch pages and share images
         env:
-          # Optional: set a repository variable named SITE_URL (Settings > Secrets and
-          # variables > Actions > Variables) e.g. https://poundbridge.com
-          # If it is empty the script uses your CNAME file, else <owner>.github.io/<repo>.
           SITE_URL: ${{ vars.SITE_URL }}
         run: node scripts/build.js
 

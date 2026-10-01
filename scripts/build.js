@@ -1,19 +1,4 @@
 #!/usr/bin/env node
-/**
- * Poundbridge build
- * -----------------
- * Run from the repo root:  node scripts/build.js
- *
- * Reads   dispatches/*.md  (Pages CMS front matter + markdown body)
- * Writes  articles.json    (same data your site already loads, plus `url` + `description`)
- *         d/<id>.html      (one static, pre-rendered page per dispatch, with Open Graph
- *                           + Twitter Card tags baked in so link previews work)
- *         og/*.jpg         (1200x630, <300 KB share images generated from your plates)
- *
- * Why static pages? WhatsApp, X/Twitter, Telegram, iMessage etc. fetch the raw HTML and
- * do NOT run JavaScript. dispatch.html?id=... is filled in by JS, so every crawler sees
- * the same empty shell. Each dispatch needs its own real HTML file with its own <meta> tags.
- */
 
 const fs = require('fs');
 const path = require('path');
@@ -26,12 +11,12 @@ const sharp = require('sharp');
 // ───────────────────────── config ─────────────────────────
 const ROOT = process.cwd();
 const SITE_NAME = 'Poundbridge';
-const DEFAULT_PLATE = 'ustreasury.jpg';   // used when a dispatch has no bgImage
-const HOME_PLATE = 'ustreasury.jpg';      // plate used for og/site.jpg (your index.html preview)
-const IMAGE_DIRS = ['.', 'assets'];       // where plate images may live (repo root, then /assets)
+const DEFAULT_PLATE = 'ustreasury.jpg';   
+const HOME_PLATE = 'ustreasury.jpg';      
+const IMAGE_DIRS = ['.', 'assets', 'assets/incite-headers'];       
 const OG_W = 1200;
 const OG_H = 630;
-const OG_MAX_BYTES = 280 * 1024;          // WhatsApp drops preview images over ~300 KB
+const OG_MAX_BYTES = 280 * 1024;          
 
 const SRC_DIR = path.join(ROOT, 'dispatches');
 const PAGES_DIR = path.join(ROOT, 'd');
@@ -42,7 +27,7 @@ const TEMPLATE = path.join(ROOT, 'dispatch.html');
 function resolveSiteUrl() {
   if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/+$/, '');
 
-  const cname = path.join(ROOT, 'CNAME');            // GitHub Pages custom domain
+  const cname = path.join(ROOT, 'CNAME');            
   if (fs.existsSync(cname)) {
     const host = fs.readFileSync(cname, 'utf8').trim();
     if (host) return 'https://' + host;
@@ -82,12 +67,11 @@ async function renderOg(buf, quality) {
   return sharp(buf)
     .rotate()
     .resize(OG_W, OG_H, { fit: 'cover', position: 'centre' })
-    .flatten({ background: '#0a0a0e' })     // PNG transparency -> dark, not black/white fringe
+    .flatten({ background: '#0a0a0e' })     
     .jpeg({ quality, mozjpeg: true })
     .toBuffer();
 }
 
-/** Hash-named so a changed plate gets a NEW url (scrapers cache images by url). */
 async function ogImageFor(plateAbs) {
   if (ogCache.has(plateAbs)) return ogCache.get(plateAbs);
 
@@ -120,10 +104,7 @@ function buildPage(template, a, { siteUrl, ogFile, heroSrc }) {
   const alt = `Visual plate for “${a.title}”`;
   const fullTitle = `${a.title} — ${SITE_NAME}`;
 
-  // Pages live in /d/, so let every relative link in the template (styles.css, index.html,
-  // favicon.svg, plate images...) resolve against the site root instead.
   $('head').prepend('<base href="../">');
-
   $('title').text(fullTitle);
 
   const add = (tag, attrs) => $('head').append($(`<${tag}>`).attr(attrs)).append('\n');
@@ -154,13 +135,11 @@ function buildPage(template, a, { siteUrl, ogFile, heroSrc }) {
 
   if (heroSrc) add('link', { rel: 'preload', as: 'image', href: heroSrc });
 
-  // Pre-render exactly what dispatch.html's JavaScript would have injected.
   $('#dispatchMeta').text(`[ INCITE // ${a.category.toUpperCase()} ]`);
   $('#dispatchTitle').text(a.title);
   $('#dispatchBody').html(a.content);
   if (heroSrc) $('#dispatchHeroBanner').css('background-image', `url('${heroSrc}')`);
 
-  // Tells dispatch.html's loader script not to overwrite the pre-rendered content.
   $('body').attr('data-prerendered', 'true');
 
   return $.html();
@@ -182,7 +161,7 @@ async function main() {
 
   fs.mkdirSync(SRC_DIR, { recursive: true });
   fs.mkdirSync(OG_DIR, { recursive: true });
-  fs.rmSync(PAGES_DIR, { recursive: true, force: true });   // drop pages of deleted dispatches
+  fs.rmSync(PAGES_DIR, { recursive: true, force: true });   
   fs.mkdirSync(PAGES_DIR, { recursive: true });
 
   const files = fs.readdirSync(SRC_DIR).filter((f) => /\.(md|markdown)$/i.test(f));
@@ -195,7 +174,6 @@ async function main() {
     const id = String(parsed.data.id || path.basename(file, path.extname(file)));
     const title = parsed.data.title || 'Untitled';
 
-    // Publication date from CMS front matter: the single source of truth for ordering.
     let date = null;
     if (parsed.data.date) {
       const d = new Date(parsed.data.date);
@@ -203,9 +181,8 @@ async function main() {
       else date = d.toISOString();
     }
 
-    // Category is inferred from the plate, exactly as before.
     const bgImage = parsed.data.bgImage || DEFAULT_PLATE;
-    const category = bgImage === 'ustreasury.jpg' ? 'salisminster' : 'burj';
+    const category = bgImage.includes('ustreasury.jpg') ? 'salisminster' : 'burj';
 
     const content = marked.parse(parsed.content, { breaks: true });
     const description = String(parsed.data.description || excerpt(content));
@@ -219,7 +196,6 @@ async function main() {
 
   articles.sort((a, b) => (b.date ? Date.parse(b.date) : 0) - (a.date ? Date.parse(a.date) : 0));
 
-  // Share images + static pages
   console.log('Share images:');
   for (const a of articles) {
     let plate = findPlate(a.bgImage);
@@ -233,14 +209,12 @@ async function main() {
     fs.writeFileSync(path.join(ROOT, a.url), buildPage(template, a, { siteUrl, ogFile, heroSrc }));
   }
 
-  // Stable-name share image for index.html (hard-coded there, so no hash in the name).
   const home = findPlate(HOME_PLATE);
   if (home) {
     fs.writeFileSync(path.join(OG_DIR, 'site.jpg'), await renderOg(fs.readFileSync(home.abs), 80));
     usedOg.add('site.jpg');
   }
 
-  // Remove share images no longer referenced.
   for (const f of fs.readdirSync(OG_DIR)) {
     if (!usedOg.has(f)) fs.unlinkSync(path.join(OG_DIR, f));
   }
