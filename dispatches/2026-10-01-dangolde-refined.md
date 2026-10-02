@@ -25,4 +25,11 @@ The weekly DXY chart
 
 
 
-The Dollar Index chart above shows that the index is well above the 55-sma and the TVM indicates a bullish trend. The white vertical lines are the Fibonacci time-zone set against the previous peaks of the index. The 2-line coincides with next year April and the 3-line coincides with July of 2029 - if we are to take these as times that are to coincide with peak, then we e
+The Dollar Index chart above shows that the index is well above the 55-sma and the TVM indicates a bullish trend. The white vertical lines are the Fibonacci time-zone set against the previous peaks of the index. The 2-line coincides with next year April and the 3-line coincides with July of 2029 - if we are to take these as times that are to coincide with peaks, then we can expect downturns of USD strength from the dates. 
+
+
+
+The fear - i say this with great concern - is that cross USD pair may suffer.
+
+![](/assets/USDZAR_2026-10-02_14-21-58.png)
+
