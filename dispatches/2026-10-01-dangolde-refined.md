@@ -29,8 +29,8 @@ The Dollar Index chart above shows that the index is well above the 55-sma and t
 
 
 
-The fear - i say this with great concern - is that cross USD pair may suffer.
+The fear - i say this with great concern - is that cross USD pairs may suffer.
 
 ![](/assets/USDZAR_2026-10-02_14-21-58.png)
 
-The rand seek our the R20/USD level in the coming years
+The Rand seeks out the R20/USD level in the coming years
