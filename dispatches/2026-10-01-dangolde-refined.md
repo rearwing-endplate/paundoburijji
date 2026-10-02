@@ -33,3 +33,4 @@ The fear - i say this with great concern - is that cross USD pair may suffer.
 
 ![](/assets/USDZAR_2026-10-02_14-21-58.png)
 
+The rand seek our the R20/USD level in the coming years
