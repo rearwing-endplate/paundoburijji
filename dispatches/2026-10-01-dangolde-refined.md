@@ -33,4 +33,9 @@ The fear - i say this with great concern - is that cross USD pairs may suffer.
 
 ![](/assets/USDZAR_2026-10-02_14-21-58.png)
 
-The Rand seeks out the R20/USD level in the coming years
+The Rand may seek out the R20/USD level in the coming years
+
+
+
+As for the ZAR, let's just say if Anubis weighs it against a feather, you're going to want to be long on feathers.
+
