@@ -403,17 +403,17 @@
         </div>
 
         <form id="enquiryForm">
-          <input type="hidden" id="enqCategory" value="general">
+          <input type="hidden" id="enqCategory" name="desk_target" value="general">
 
           <div class="form-grid-row">
             <div class="form-group">
               <label class="field-label-luxe"><span class="field-idx">[ 01 ]</span> Full Name / Family Trust</label>
-              <input type="text" id="enqName" class="form-control" required placeholder="Name or Trust identifier">
+              <input type="text" id="enqName" name="name" class="form-control" required placeholder="Name or Trust identifier">
             </div>
 
             <div class="form-group">
               <label class="field-label-luxe"><span class="field-idx">[ 02 ]</span> Encrypted Return Channel</label>
-              <input type="email" id="enqEmail" class="form-control" required placeholder="principal@domain.com">
+              <input type="email" id="enqEmail" name="email" class="form-control" required placeholder="principal@domain.com">
             </div>
           </div>
 
@@ -421,7 +421,7 @@
             <div class="enq-fields morph-in" data-fields-for="general">
               <div class="form-group full-width">
                 <label class="field-label-luxe"><span class="field-idx">[ 03 ]</span> Salisminster Mandate Focus</label>
-                <select id="genSubject" class="form-control select-luxe">
+                <select id="genSubject" name="salisminster_mandate" class="form-control select-luxe">
                   <option value="Global Equities">Global Productive Equities &amp; Blue Chips</option>
                   <option value="Sovereign Bonds">Sovereign &amp; Investment-Grade Bonds</option>
                   <option value="Physical Bullion">Physical Bullion &amp; SA Refinery Custody</option>
@@ -433,7 +433,7 @@
             <div class="enq-fields" data-fields-for="mql5_quant" style="display:none;">
               <div class="form-group full-width">
                 <label class="field-label-luxe"><span class="field-idx">[ 03 ]</span> Quantitative Discipline Focus</label>
-                <select id="mql5QuantType" class="form-control select-luxe">
+                <select id="mql5QuantType" name="quant_discipline" class="form-control select-luxe">
                   <option value="MQL5 EA Development">MQL5 EA Architecture &amp; Development</option>
                   <option value="Yen Cross Arbitrage">Yen-Cross Positioning (USD/JPY, GBP/JPY)</option>
                   <option value="Crypto Derivatives">Crypto Basis Arbitrage &amp; Perpetual Models</option>
@@ -448,7 +448,7 @@
               <span class="field-idx">[ 04 ]</span>
               <span class="field-name">Transmission Payload</span>
             </label>
-            <textarea id="enqMessage" class="form-control luxe-textarea" required placeholder="Compose confidential estate or quantitative correspondence..."></textarea>
+            <textarea id="enqMessage" name="message" class="form-control luxe-textarea" required placeholder="Compose confidential estate or quantitative correspondence..."></textarea>
           </div>
 
           <button type="submit" class="btn primary apple-submit-btn">Dispatch Signal &rarr;</button>
@@ -705,20 +705,59 @@
     }, 180);
   }
   
+  // Custom Web3Forms Integration
   const enquiryForm = document.getElementById('enquiryForm');
   if (enquiryForm) {
-    enquiryForm.addEventListener('submit', (e) => {
+    enquiryForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const successMsg = document.getElementById('enqSuccess');
-      if (successMsg) {
-        successMsg.style.display = 'block';
-        setTimeout(() => {
-          successMsg.style.display = 'none';
-        }, 5000);
+      
+      const submitBtn = enquiryForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = 'Transmitting...';
+      submitBtn.disabled = true;
+
+      // Extract form data
+      const formData = new FormData(enquiryForm);
+      const category = document.getElementById('enqCategory').value;
+      
+      // Dynamically append the correct Web3Forms Access Key based on desk
+      const accessKey = category === 'mql5_quant' 
+          ? '5984889b-16be-40ca-a265-6fedc1ced8ad' 
+          : '003f3f30-3462-40ee-9186-c6a95f72f303';
+      
+      formData.append('access_key', accessKey);
+      
+      // Optional: Tag the subject line with the destination
+      const deskName = category === 'mql5_quant' ? 'Burj Al-Jabr' : 'Salisminster';
+      formData.append('subject', `Encrypted Correspondence - ${deskName}`);
+
+      try {
+        const response = await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const successMsg = document.getElementById('enqSuccess');
+            if (successMsg) {
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 5000);
+            }
+            enquiryForm.reset();
+            const enqCat = document.getElementById('enqCategory');
+            if (enqCat) enqCat.value = currentDeskCategory;
+        } else {
+            alert('Signal transmission encountered an error. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        alert('A network error occurred. Please verify your connection.');
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
       }
-      enquiryForm.reset();
-      const enqCat = document.getElementById('enqCategory');
-      if (enqCat) enqCat.value = currentDeskCategory;
     });
   }
   
